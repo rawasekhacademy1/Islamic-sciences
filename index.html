@@ -2253,7 +2253,6 @@ function openTeacherFinanceModal(teacherUid, teacherName){
       <button class="btn" id="btnFinanceAdd" style="flex:1">➕ إضافة</button>
       <button class="btn danger" id="btnFinanceDeduct" style="flex:1">➖ خصم</button>
     </div>
-    <button class="btn ghost" id="btnFinanceReset" style="margin-top:8px">💵 تصفير الرصيد (تم الصرف الشهري)</button>
     <div class="section-title" style="margin-top:16px">آخر الحركات</div>
     <div id="financeTxList"><div class="empty-state">جارِ التحميل...</div></div>`);
 
@@ -2298,29 +2297,6 @@ function openTeacherFinanceModal(teacherUid, teacherName){
   }
   $('#btnFinanceAdd').addEventListener('click', ()=>applyFinanceDelta(1));
   $('#btnFinanceDeduct').addEventListener('click', ()=>applyFinanceDelta(-1));
-
-  // تصفير الرصيد بعد الصرف الشهري: بيسجّل حركة خصم بقيمة الرصيد الحالي بالظبط (مش تعديل مباشر على الرقم)
-  // عشان السجل التاريخي للحركات يفضل صحيح ومتّسق، والرصيد يرجع صفر استعدادًا للشهر الجديد.
-  $('#btnFinanceReset').addEventListener('click', async ()=>{
-    const btnReset = $('#btnFinanceReset');
-    const snap = await finRef.get();
-    const bal = (snap.val()||{}).balance||0;
-    if(!bal){ toast('الرصيد صفر بالفعل'); return; }
-    if(!confirm(`تصفير رصيد "${teacherName}" الحالي (${bal.toLocaleString('ar-EG')} ج.م) بعد صرفه؟ هيتسجل كحركة "تمت التسوية" ولن يمكن التراجع عنها إلا بإضافة رصيد يدويًا.`)) return;
-    btnReset.disabled = true;
-    try{
-      const amount = -bal;
-      await finRef.child('transactions').push({
-        amount, note:'تصفية الرصيد بعد الصرف', byUid: state.user.uid, byName: state.profile?.name||'', ts: firebase.database.ServerValue.TIMESTAMP
-      });
-      await finRef.update({ balance: firebase.database.ServerValue.increment(amount), updatedAt: firebase.database.ServerValue.TIMESTAMP });
-      logAdminAction('teacher_finance', `تصفية رصيد ${teacherName} (${bal.toLocaleString('ar-EG')} ج.م) بعد الصرف`);
-      toast('تم تصفير الرصيد');
-      await refreshFinanceModal();
-      loadAdminUsers();
-    }catch(e){ toast('تعذر تصفير الرصيد: '+(e.message||'')); }
-    finally{ btnReset.disabled = false; }
-  });
 }
 // نقل طالب لمعلمة أخرى (بديل سريع لتبويب "الربط" الكامل، من نفس شاشة المستخدمين)
 function openReassignTeacherModal(studentUid, student){
