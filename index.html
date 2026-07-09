@@ -21,8 +21,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
-<!-- Agora RTC SDK -->
-<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
+<!-- WebRTC أصلي (مدمج في المتصفح، مش محتاج أي مكتبة خارجية) — بديل Agora -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
 <style>
@@ -578,11 +577,15 @@ const FIREBASE_CONFIG = {
   appId: "1:310036534754:android:ba27e270c322f0164e15bb"
 };
 
-const AGORA_APP_ID = "2687ea67475f48c8acaa8fa64b9fe843";
-// بعد تفعيل التوكنات: الوضع بقى "App ID + Token" من Agora Console (مش "App ID" بس)
-// TOKEN_SERVER_URL: حط هنا رابط الـ Vercel اللي هتاخده بعد نشر فولدر agora-token-server
-// مثال: "https://agora-token-server-xxxx.vercel.app/api/agora-token"
-const TOKEN_SERVER_URL = "https://mahmoudgamalghanim--898ce504785811f1af0e1607ee4eb77e.web.val.run";
+// إعدادات المكالمات الصوتية (WebRTC أصلي — بديل Agora بالكامل)
+// STUN مجاني من جوجل + TURN مجاني بالكامل من OpenRelay (Metered.ca) لحل مشكلة الشبكات
+// اللي محتاجة Relay (فايروول/NAT صعب). ده مجاني ومفيهوش حد أقصى للميجابايت.
+const ICE_SERVERS = [
+  { urls: "stun:stun.relay.metered.ca:80" },
+  { urls: "turn:global.relay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:global.relay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:global.relay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+];
 
 // رفع الصور/الملفات في الشات بقى عن طريق Cloudinary (مجاني بالكامل، من غير أي كارت بنكي)
 // بدل Firebase Storage اللي بقى محتاج خطة Blaze (مدفوعة). عشان تشغّلها:
@@ -603,8 +606,10 @@ const storage = firebase.storage();
 let state = {
   user:null, profile:null, deviceId:null, theme:'light',
   currentChatWith:null, chatListenerRef:null, msgsRef:null, presenceRef:null, chatPresenceRef:null,
-  agoraClient:null, localAudioTrack:null, currentCallId:null, callTimerInt:null, callSeconds:0,
+  pc:null, localStream:null, currentCallId:null, callTimerInt:null, callSeconds:0,
   _callSheetWatcher:null, _callSheetCtx:null, _callListeners:[], _callPeerMutedWatcher:null,
+  _rtcOfferRef:null, _rtcAnswerRef:null, _rtcOfferCandRef:null, _rtcAnswerCandRef:null,
+  _rtcRole:null, _rtcRetryCount:0, _rtcAnalyserCtx:null, _rtcAnalyserRaf:null,
   studentsCache:{}, teachersCache:{}, route:'loading', routeParams:{},
   maintenance:{enabled:false, message:''} // حالة وضع الصيانة — بتتحدث لحظيًا من siteConfig/maintenance حتى قبل تسجيل الدخول
 };
@@ -1338,8 +1343,8 @@ function resetLocalState(){
   if(state.callTimerInt){ clearInterval(state.callTimerInt); }
   state.callTimerInt = null;
   state.callSeconds = 0;
-  state.agoraClient = null;
-  state.localAudioTrack = null;
+  state.pc = null;
+  state.localStream = null;
   state.studentsCache = {};
   state.teachersCache = {};
   state.routeParams = {};
@@ -4001,15 +4006,11 @@ async function uploadChatFile(file, opts){
   }
 }
 
-/* =====[ SECTION: CALLS (AGORA) — نظام غرفة الاتصال (المعلمة تُنشئ / الطالبة تُدعى) ]=====
-   منطق الاتصال الفعلي (Agora client/join/publish/subscribe/tracks/reconnect/cleanup) منقول
-   بالكامل من "معمل المكالمات" (call-lab.html) بدون إعادة كتابته، وتم فقط لفّه بتدفّق جديد:
+/* =====[ SECTION: CALLS (WebRTC) — نظام غرفة الاتصال (المعلمة تُنشئ / الطالبة تُدعى) ]=====
+   منطق إدارة الغرفة (إنشاء/دعوة/انضمام/إنهاء) عبر Firebase زي ما هو تمامًا من غير أي تغيير.
    المعلمة هي الوحيدة اللي تقدر "تُنشئ" غرفة، وبعدين تبعت دعوة داخل نفس الشات، والطالبة
-   تنضم بضغطة واحدة من غير ما تكتب أي كود يدويًا. */
-function hashUidToNumber(uid){
-  let h = 0; for(let i=0;i<uid.length;i++){ h = (h*31 + uid.charCodeAt(i)) >>> 0; }
-  return (h % 2147483000) + 1;
-}
+   تنضم بضغطة واحدة من غير ما تكتب أي كود يدويًا. منطق الصوت نفسه (تحت) بقى WebRTC أصلي
+   + TURN مجاني بدل Agora. */
 // كود عرض قصير فقط (للتوثيق البصري داخل الكارد) — الطالبة لا تحتاج تكتبه أبدًا، الانضمام بالكامل تلقائي عبر زر الدعوة
 function callDisplayCode(callId){
   return String(callId).replace(/[^a-zA-Z0-9]/g,'').slice(-8).toUpperCase();
@@ -4025,16 +4026,6 @@ function shortChannelId(callId){
     h2=(Math.imul(131,h2)+c)|0;
   }
   return 'c_'+(h1>>>0).toString(36)+(h2>>>0).toString(36);
-}
-
-/* ---------- بيجيب توكن دخول من سيرفر التوكنات (Vercel/Val). لازم يتنفذ قبل أي join على Agora ---------- */
-async function fetchAgoraToken(channel, numericUid){
-  const url = `${TOKEN_SERVER_URL}?channel=${encodeURIComponent(channel)}&uid=${numericUid}`;
-  const resp = await fetch(url);
-  if(!resp.ok){ throw new Error('token-server-error'); }
-  const data = await resp.json();
-  if(!data.token){ throw new Error('no-token-in-response'); }
-  return data.token;
 }
 
 /* =====[ الشيت السفلي عند الضغط على زر الاتصال داخل الشات ]===== */
@@ -4226,7 +4217,7 @@ async function joinCallRoom(callId){
       await db.ref('calls/'+callId).update({ status:'active', startedAt: call.startedAt || firebase.database.ServerValue.TIMESTAMP });
     }
     openCallOverlay({uid:peerUid, name:peerName}, callId, call.channel);
-    joinAgoraChannel(call.channel, callId);
+    joinWebRTCCall(call.channel, callId);
   }catch(e){
     console.error(e);
     toast('تعذر الانضمام للمكالمة');
@@ -4318,7 +4309,8 @@ function openCallOverlay(peer, callId, channel){
       <button class="call-btn mute" id="btnMuteCall">🎤</button>
       <button class="call-btn speaker active" id="btnSpeakerCall">🔊</button>
       <button class="call-btn end" id="btnEndCall">❌</button>
-    </div>`;
+    </div>
+    <audio id="callRemoteAudio" autoplay playsinline></audio>`;
   overlay.classList.add('active');
   const isTeacher = state.profile.role==='teacher';
   $('#btnEndCall').onclick = async ()=>{
@@ -4336,7 +4328,7 @@ function openCallOverlay(peer, callId, channel){
   };
   $('#btnMuteCall').onclick = (e)=>{
     const btn = e.currentTarget; const muted = btn.classList.toggle('active');
-    if(state.localAudioTrack) state.localAudioTrack.setEnabled(!muted);
+    if(state.localStream) state.localStream.getAudioTracks().forEach(t=> t.enabled = !muted);
     btn.textContent = muted ? '🔇' : '🎤';
     db.ref(`calls/${callId}/muted/${state.user.uid}`).set(muted);
   };
@@ -4360,71 +4352,188 @@ function setSoundwaveActive(active){
   if(el) el.classList.toggle('speaking', !!active);
 }
 
-/* =====[ منطق Agora (منقول من معمل المكالمات) — Join / Publish / Subscribe / Reconnect / Cleanup ]===== */
-async function joinAgoraChannel(channel, callId){
+/* =====[ منطق WebRTC أصلي (بديل Agora) — Join / Signaling عبر Firebase / TURN مجاني (OpenRelay) ]=====
+   الفكرة: بدل ما نعتمد على Agora (السيرفر بتاعه + سيرفر توكنات خارجي كانوا سبب انقطاع المكالمات)،
+   بنستخدم RTCPeerConnection الأصلي في المتصفح، وبنستخدم Firebase (اللي أصلاً شغال 100% في المنصة)
+   كقناة "تبادل إشارة" (Signaling) بين الطرفين تحت calls/{callId}/rtc، والـ TURN المجاني بيتكفل
+   بحالات الشبكات الصعبة (فايروول/NAT) لو الاتصال المباشر فشل. الدور ثابت دايمًا: المعلمة = Offerer،
+   الطالبة = Answerer — بغض النظر عن مين دخل المكالمة الأول، عشان مفيش أي Race Condition. */
+async function joinWebRTCCall(channel, callId){
   try{
-    // تنظيف احترازي: لو فيه أي جلسة Agora قديمة عالقة (نادر جدًا)، اقفلها الأول
-    // قبل ما تبدأ الجلسة الجديدة، عشان الصوت/الاتصال القديم مايتلخبطش مع الجديد — ومنع أكتر من Client/Local Track.
-    if(state.agoraClient){ try{ state.agoraClient.removeAllListeners && state.agoraClient.removeAllListeners(); await state.agoraClient.leave(); }catch(_){} state.agoraClient=null; }
-    if(state.localAudioTrack){ try{ state.localAudioTrack.close(); }catch(_){} state.localAudioTrack=null; }
-    const numericUid = hashUidToNumber(state.user.uid);
-    const agoraToken = await fetchAgoraToken(channel, numericUid);
-    state.agoraClient = AgoraRTC.createClient({mode:'rtc', codec:'vp8'});
+    // تنظيف احترازي لأي جلسة WebRTC قديمة عالقة قبل ما تبدأ جلسة جديدة
+    await teardownWebRTC();
+    const call = (await db.ref('calls/'+callId).get()).val();
+    if(!call){ throw new Error('call-not-found'); }
+    const myUid = state.user.uid;
+    const isOfferer = myUid===call.teacherId;
+    state._rtcRole = isOfferer ? 'offerer' : 'answerer';
+    state._rtcRetryCount = 0;
     setCallConnDot('reconnecting');
-    // مؤشر حالة الاتصال + إعادة الاتصال التلقائية: الـ SDK نفسه بيحاول يعيد الاتصال
-    // عند انقطاع الشبكة، إحنا هنا بس بنعكس الحالة دي للمستخدم بشكل واضح (مؤشر جودة الاتصال).
-    state.agoraClient.on('connection-state-change', (curState, prevState, reason)=>{
-      const statusEl = $('#callStatusText');
-      if(curState==='CONNECTED'){ setCallConnDot('good'); if(statusEl && $('#callTimerText').style.display!=='none') statusEl.textContent=''; }
-      else if(curState==='RECONNECTING'){ setCallConnDot('reconnecting'); if(statusEl) statusEl.textContent='جارِ إعادة الاتصال...'; }
-      else if(curState==='DISCONNECTED' && reason!=='LEAVE'){ setCallConnDot('bad'); if(statusEl) statusEl.textContent='انقطع الاتصال'; }
-    });
-    await state.agoraClient.join(AGORA_APP_ID, channel, agoraToken, numericUid);
     // تحسين جودة الصوت: إلغاء الصدى + تقليل الضوضاء + تحكم تلقائي في مستوى الصوت
-    state.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
-      AEC: true, ANS: true, AGC: true, encoderConfig: 'music_standard'
+    state.localStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
     });
-    await state.agoraClient.publish([state.localAudioTrack]);
-    state.agoraClient.on('user-published', async (user, mediaType)=>{
-      await state.agoraClient.subscribe(user, mediaType);
-      if(mediaType==='audio') user.audioTrack.play();
-    });
-    state.agoraClient.on('user-left', ()=> setSoundwaveActive(false));
-    // مؤشر "الموجات الصوتية" أثناء الكلام — بيعتمد على مؤشر مستوى الصوت الحقيقي من Agora (مش أنيميشن وهمي دايم)
-    state.agoraClient.enableAudioVolumeIndicator();
-    state.agoraClient.on('volume-indicator', volumes=>{
-      const speaking = (volumes||[]).some(v=> v.level > 12);
-      setSoundwaveActive(speaking);
-    });
-    setCallConnDot('good');
-    $('#callStatusText').style.display='none';
-    $('#callTimerText').style.display='block';
-    state.callSeconds = 0;
-    clearInterval(state.callTimerInt);
-    state.callTimerInt = setInterval(()=>{ state.callSeconds++; const el=$('#callTimerText'); if(el) el.textContent=fmtDuration(state.callSeconds); }, 1000);
+    await startPeerConnection(callId, isOfferer);
   }catch(e){
     console.error(e);
     setCallConnDot('bad');
     const statusEl = $('#callStatusText');
     if(statusEl){
+      statusEl.style.display='block';
       statusEl.innerHTML = `تعذر الدخول على المكالمة <button class="call-retry-btn" id="btnRetryJoin">إعادة المحاولة</button>`;
-      $('#btnRetryJoin')?.addEventListener('click', ()=> joinAgoraChannel(channel, callId));
+      $('#btnRetryJoin')?.addEventListener('click', ()=> joinWebRTCCall(channel, callId));
     }
-    toast('تعذر الدخول على المكالمة — تأكد إن سيرفر التوكن شغال وإن App Certificate مفعّل من Agora Console');
+    toast('تعذر الدخول على المكالمة — تأكد من إذن الميكروفون واتصال الإنترنت');
   }
+}
+/* ---------- إنشاء اتصال WebRTC وربطه بقناة الإشارة على Firebase ---------- */
+async function startPeerConnection(callId, isOfferer){
+  const rtcRef = db.ref('calls/'+callId+'/rtc');
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  state.pc = pc;
+
+  state.localStream.getTracks().forEach(track=> pc.addTrack(track, state.localStream));
+
+  const remoteStream = new MediaStream();
+  const audioEl = $('#callRemoteAudio');
+  if(audioEl) audioEl.srcObject = remoteStream;
+  pc.ontrack = (event)=>{
+    event.streams[0].getTracks().forEach(t=>{ if(!remoteStream.getTracks().includes(t)) remoteStream.addTrack(t); });
+    startSoundwaveMonitor(remoteStream);
+  };
+
+  const myCandField = isOfferer ? 'offererCandidates' : 'answererCandidates';
+  const peerCandField = isOfferer ? 'answererCandidates' : 'offererCandidates';
+
+  pc.onicecandidate = (event)=>{
+    if(event.candidate) rtcRef.child(myCandField).push(event.candidate.toJSON());
+  };
+
+  // مؤشر حالة الاتصال + إعادة الاتصال التلقائية عند انقطاع الشبكة (بديل reconnect بتاع Agora)
+  pc.oniceconnectionstatechange = ()=>{
+    const cs = pc.iceConnectionState;
+    const statusEl = $('#callStatusText');
+    if(cs==='connected' || cs==='completed'){
+      setCallConnDot('good');
+      if(statusEl) statusEl.style.display='none';
+      const tm=$('#callTimerText'); if(tm) tm.style.display='block';
+      if(!state.callTimerInt){
+        state.callSeconds = 0;
+        state.callTimerInt = setInterval(()=>{ state.callSeconds++; const el=$('#callTimerText'); if(el) el.textContent=fmtDuration(state.callSeconds); }, 1000);
+      }
+      state._rtcRetryCount = 0;
+    } else if(cs==='checking' || cs==='disconnected'){
+      setCallConnDot('reconnecting');
+      if(statusEl){ statusEl.style.display='block'; statusEl.textContent='جارِ إعادة الاتصال...'; }
+    } else if(cs==='failed'){
+      setCallConnDot('bad');
+      if(isOfferer && state._rtcRetryCount < 5){
+        state._rtcRetryCount++;
+        restartIce(callId, pc);
+      } else if(statusEl){
+        statusEl.style.display='block';
+        statusEl.innerHTML = `تعذر إعادة الاتصال <button class="call-retry-btn" id="btnRetryJoin">إعادة المحاولة</button>`;
+        $('#btnRetryJoin')?.addEventListener('click', ()=> joinWebRTCCall(null, callId));
+      }
+    }
+  };
+
+  // استقبال مرشحات ICE من الطرف التاني — child_added بيلقط الموجود سابقًا + أي جديد أول ما يوصل
+  const peerCandRef = rtcRef.child(peerCandField);
+  const candCb = snap=>{
+    const cand = snap.val();
+    if(cand){ pc.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{}); }
+  };
+  peerCandRef.on('child_added', candCb);
+  if(isOfferer) state._rtcAnswerCandRef = {ref:peerCandRef, cb:candCb};
+  else state._rtcOfferCandRef = {ref:peerCandRef, cb:candCb};
+
+  if(isOfferer){
+    // المعلمة: تمسح أي Offer/Answer قديم من جلسة سابقة، وتبعت Offer جديد
+    await rtcRef.child('offer').remove();
+    await rtcRef.child('answer').remove();
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await rtcRef.child('offer').set({ sdp: offer.sdp, type: offer.type });
+
+    const answerRef = rtcRef.child('answer');
+    const answerCb = snap=>{
+      const ans = snap.val();
+      if(ans && pc.signalingState==='have-local-offer'){
+        pc.setRemoteDescription(new RTCSessionDescription(ans)).catch(e=>console.error(e));
+      }
+    };
+    answerRef.on('value', answerCb);
+    state._rtcAnswerRef = {ref:answerRef, cb:answerCb};
+  } else {
+    // الطالبة: تستنى وصول الـ Offer وترد عليه بـ Answer (وبترد تاني لو المعلمة عملت Restart لأي سبب)
+    const offerRef = rtcRef.child('offer');
+    const offerCb = async snap=>{
+      const off = snap.val();
+      if(!off || pc.signalingState==='closed') return;
+      try{
+        await pc.setRemoteDescription(new RTCSessionDescription(off));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await rtcRef.child('answer').set({ sdp: answer.sdp, type: answer.type });
+      }catch(e){ console.error(e); }
+    };
+    offerRef.on('value', offerCb);
+    state._rtcOfferRef = {ref:offerRef, cb:offerCb};
+  }
+}
+/* ---------- محاولة إعادة اتصال (ICE Restart) من جانب المعلمة (Offerer) عند فشل الاتصال ---------- */
+async function restartIce(callId, pc){
+  try{
+    if(pc.signalingState==='closed') return;
+    const rtcRef = db.ref('calls/'+callId+'/rtc');
+    const offer = await pc.createOffer({ iceRestart:true });
+    await pc.setLocalDescription(offer);
+    await rtcRef.child('answer').remove();
+    await rtcRef.child('offer').set({ sdp: offer.sdp, type: offer.type });
+  }catch(e){ console.error(e); }
+}
+/* ---------- مؤشر "الموجات الصوتية" أثناء الكلام — بيعتمد على مستوى صوت حقيقي من صوت الطرف التاني ---------- */
+function startSoundwaveMonitor(stream){
+  try{
+    if(state._rtcAnalyserRaf) cancelAnimationFrame(state._rtcAnalyserRaf);
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const actx = new AudioCtx();
+    const source = actx.createMediaStreamSource(stream);
+    const analyser = actx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    state._rtcAnalyserCtx = actx;
+    const tick = ()=>{
+      analyser.getByteFrequencyData(data);
+      const avg = data.reduce((a,b)=>a+b,0)/data.length;
+      setSoundwaveActive(avg > 8);
+      state._rtcAnalyserRaf = requestAnimationFrame(tick);
+    };
+    tick();
+  }catch(_){ /* تجاهل لو المتصفح مايدعمش AnalyserNode — ميض المكالمة نفسها بتفضل شغالة عادي */ }
+}
+/* ---------- إزالة كل مستمعي/موارد WebRTC بالكامل ومنع تسريب الذاكرة ---------- */
+async function teardownWebRTC(){
+  if(state._rtcAnalyserRaf){ cancelAnimationFrame(state._rtcAnalyserRaf); state._rtcAnalyserRaf=null; }
+  if(state._rtcAnalyserCtx){ try{ state._rtcAnalyserCtx.close(); }catch(_){} state._rtcAnalyserCtx=null; }
+  if(state._rtcOfferRef){ state._rtcOfferRef.ref.off('value', state._rtcOfferRef.cb); state._rtcOfferRef=null; }
+  if(state._rtcAnswerRef){ state._rtcAnswerRef.ref.off('value', state._rtcAnswerRef.cb); state._rtcAnswerRef=null; }
+  if(state._rtcOfferCandRef){ state._rtcOfferCandRef.ref.off('child_added', state._rtcOfferCandRef.cb); state._rtcOfferCandRef=null; }
+  if(state._rtcAnswerCandRef){ state._rtcAnswerCandRef.ref.off('child_added', state._rtcAnswerCandRef.cb); state._rtcAnswerCandRef=null; }
+  if(state.pc){ try{ state.pc.close(); }catch(_){} state.pc=null; }
+  if(state.localStream){ try{ state.localStream.getTracks().forEach(t=>t.stop()); }catch(_){} state.localStream=null; }
+  const audioEl = $('#callRemoteAudio'); if(audioEl) audioEl.srcObject = null;
+  state._rtcRole = null; state._rtcRetryCount = 0;
 }
 async function endCallUI(callId){
   hideIncomingBanner();
   $('#callOverlay').classList.remove('active');
   clearInterval(state.callTimerInt); state.callTimerInt=null;
   setSoundwaveActive(false);
-  // إزالة كل مستمعي Agora بالكامل ومنع تسريب الذاكرة — Destroy/Cleanup شامل، ومنع Duplicate Events في الجلسة الجاية
-  if(state.agoraClient){
-    try{ state.agoraClient.removeAllListeners && state.agoraClient.removeAllListeners(); }catch(_){}
-    try{ await state.agoraClient.leave(); }catch(e){}
-    state.agoraClient = null;
-  }
-  if(state.localAudioTrack){ try{ state.localAudioTrack.close(); }catch(_){} state.localAudioTrack=null; }
+  // إزالة كل موارد WebRTC بالكامل ومنع تسريب الذاكرة — Destroy/Cleanup شامل، ومنع Duplicate Events في الجلسة الجاية
+  await teardownWebRTC();
   if(state._callPeerMutedWatcher){ state._callPeerMutedWatcher.ref.off('value', state._callPeerMutedWatcher.cb); state._callPeerMutedWatcher=null; }
   try{ if(callId) db.ref(`calls/${callId}/muted/${state.user.uid}`).remove(); }catch(_){}
   state.currentCallId = null;
