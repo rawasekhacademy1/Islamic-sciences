@@ -5,29 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>رواسخ أكاديمية</title>
 
-<!-- ============================================================
-     رواسخ أكاديمية
-     ملف واحد شامل: HTML + CSS + JS (بنفس فلسفة "نافورة")
-     الأقسام مقسّمة بعلامات =====[ SECTION ]===== لتسهيل التعديل الجراحي لاحقًا
-     ============================================================ -->
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- Firebase (compat SDK — أسهل في ملف واحد بدون build step) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
-<!-- WebRTC أصلي (مدمج في المتصفح، مش محتاج أي مكتبة خارجية) — بديل Agora -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
 <style>
-/* =====[ SECTION: DESIGN TOKENS ]===== */
+
 :root{
-  /* لوحة الألوان — أخضر زمردي غامق / ذهبي / كريمي */
+  
   --emerald-950:#07231a;
   --emerald-900:#0c3327;
   --emerald-800:#123f30;
@@ -85,17 +77,14 @@ input,select,textarea{font-family:inherit;}
 a{color:inherit; text-decoration:none;}
 ::selection{background:var(--accent-2); color:var(--emerald-950);}
 
-/* شريط تمرير هادئ */
 ::-webkit-scrollbar{width:6px; height:6px;}
 ::-webkit-scrollbar-thumb{background:var(--border); border-radius:10px;}
 
-/* =====[ SECTION: ZIER (SIGNATURE MOTIF) — سبحة رقمية كمؤشر تقدّم ]===== */
 .tasbih{display:flex; align-items:center; gap:4px; direction:ltr;}
 .tasbih .bead{width:9px; height:9px; border-radius:50%; background:var(--border); transition:all .4s ease;}
 .tasbih .bead.filled{background:linear-gradient(160deg,var(--gold-400),var(--gold-500)); box-shadow:0 0 0 3px rgba(201,162,39,0.15);}
 .tasbih .imam{width:13px; height:13px; border-radius:3px; background:var(--accent); transform:rotate(45deg);}
 
-/* =====[ SECTION: APP SHELL ]===== */
 #app{min-height:100vh; display:flex; flex-direction:column; position:relative;}
 .screen{display:none; flex:1; flex-direction:column; animation:fadeSlide .45s cubic-bezier(.2,.8,.2,1);}
 .screen.active{display:flex;}
@@ -105,8 +94,6 @@ a{color:inherit; text-decoration:none;}
 .container{width:100%; max-width:520px; margin:0 auto; padding:22px 18px 100px;}
 .container.wide{max-width:920px;}
 
-/* =====[ SECTION: RESPONSIVE / SCREEN SIZE FIXES ]===== */
-/* بدل استخدام 100vh فقط (بيعمل مشاكل على موبايل مع شريط المتصفح)، بنستخدم dvh لما تكون متاحة */
 .chat-screen{height:100vh;}
 @supports (height: 100dvh){ .chat-screen{height:100dvh;} }
 .call-overlay{min-height:100vh;}
@@ -116,14 +103,23 @@ a{color:inherit; text-decoration:none;}
 .loader-wrap{height:100vh;}
 @supports (height: 100dvh){ .loader-wrap{height:100dvh;} }
 
-/* تابلت */
+html.has-app-vh .chat-screen{height:calc(var(--app-vh, 100dvh))!important;}
+html.has-app-vh .call-overlay{min-height:calc(var(--app-vh, 100dvh))!important;}
+html.has-app-vh #app{min-height:calc(var(--app-vh, 100dvh))!important;}
+html.has-app-vh .loader-wrap{height:calc(var(--app-vh, 100dvh))!important;}
+html.has-app-vh .admin-chat-overlay{height:calc(var(--app-vh, 100dvh))!important;}
+html.has-app-vh .mushaf-overlay{height:calc(var(--app-vh, 100dvh))!important;}
+.chat-header, .chat-input-bar, .chat-search-bar, .pinned-banner, .reply-preview-bar, .attach-preview-bar, .voice-record-bar{flex-shrink:0;}
+.chat-body{overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch;}
+html, body{overscroll-behavior-y:none;}
+
 @media (min-width:700px){
   .container{max-width:640px; padding:26px 24px 110px;}
   .container.wide{max-width:960px;}
   .role-pick{gap:18px;}
   .stats-grid{gap:16px;}
 }
-/* شاشات كبيرة / كمبيوتر */
+
 @media (min-width:1024px){
   body{background:var(--surface-2);}
   #app{max-width:1180px; margin:0 auto; box-shadow:0 0 60px rgba(0,0,0,.08); background:var(--bg); min-height:100vh;}
@@ -131,7 +127,7 @@ a{color:inherit; text-decoration:none;}
   .container.wide{max-width:1040px;}
   .bottom-nav{max-width:1180px; margin:0 auto; left:0; right:0;}
 }
-/* شاشات صغيرة جدًا (أقل من 360px) */
+
 @media (max-width:359px){
   .container{padding:16px 12px 92px;}
   .brand-hero{padding:34px 10px 18px;}
@@ -139,7 +135,6 @@ a{color:inherit; text-decoration:none;}
   .stat-box b{font-size:22px;}
 }
 
-/* =====[ SECTION: TOP BAR ]===== */
 .topbar{
   position:sticky; top:0; z-index:30; background:var(--surface); border-bottom:1px solid var(--border);
   display:flex; align-items:center; gap:12px; padding:14px 18px;
@@ -152,7 +147,6 @@ a{color:inherit; text-decoration:none;}
 .icon-btn:active{transform:scale(.92);}
 .back-btn{transform:scaleX(-1);}
 
-/* =====[ SECTION: BUTTONS / FORMS ]===== */
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   padding:14px 20px; border-radius:14px; border:none; font-weight:700; font-size:15px;
@@ -196,7 +190,6 @@ a{color:inherit; text-decoration:none;}
 .loader-ring{width:56px; height:56px; border-radius:50%; border:4px solid var(--border); border-top-color:var(--accent); animation:spin 1s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* =====[ SECTION: AUTH SCREENS ]===== */
 .brand-hero{text-align:center; padding:50px 20px 30px;}
 .brand-hero .logo{
   width:84px; height:84px; margin:0 auto 16px; border-radius:24px;
@@ -220,7 +213,6 @@ a{color:inherit; text-decoration:none;}
 .tabs-switch button{flex:1; padding:11px; border:none; background:transparent; border-radius:11px; font-weight:700; color:var(--text-dim); font-size:14px;}
 .tabs-switch button.active{background:var(--surface); color:var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.08);}
 
-/* =====[ SECTION: BOTTOM NAV (شبيه واتساب) ]===== */
 .bottom-nav{
   position:fixed; bottom:0; right:0; left:0; z-index:40; background:var(--surface); border-top:1px solid var(--border);
   display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom));
@@ -235,14 +227,13 @@ a{color:inherit; text-decoration:none;}
   position:absolute; top:0; left:calc(50% - 2px); background:var(--danger); color:#fff; font-size:10px;
   min-width:16px; height:16px; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0 4px;
 }
-/* =====[ SECTION: جرس الإشعارات ]===== */
+
 .notif-badge{
   position:absolute; top:-3px; left:-3px; background:var(--danger); color:#fff; font-size:10px; font-weight:800;
   min-width:16px; height:16px; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0 4px;
   border:1.5px solid var(--surface);
 }
 
-/* =====[ SECTION: LISTS (طلاب/معلمات/مفاتيح) ]===== */
 .list-item{
   display:flex; align-items:center; gap:12px; padding:13px; background:var(--surface); border:1px solid var(--border);
   border-radius:var(--radius-md); margin-bottom:10px; position:relative; transition:transform .15s ease;
@@ -263,7 +254,6 @@ a{color:inherit; text-decoration:none;}
 .progress-track{height:8px; border-radius:6px; background:var(--surface-2); overflow:hidden; margin-top:6px;}
 .progress-fill{height:100%; border-radius:6px; background:linear-gradient(90deg,var(--gold-500),var(--gold-400)); transition:width .6s ease;}
 
-/* =====[ SECTION: CHAT (شبيه واتساب) ]===== */
 .chat-screen{display:flex; flex-direction:column; height:100vh;}
 .chat-header{
   display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--surface); border-bottom:1px solid var(--border); z-index:20;
@@ -324,7 +314,6 @@ a{color:inherit; text-decoration:none;}
 .attach-btn{width:44px; height:44px; border-radius:50%; background:var(--surface-2); color:var(--text); border:none; flex-shrink:0; font-size:19px;}
 .attach-btn:active{transform:scale(.92);}
 
-/* =====[ SECTION: CHAT MEDIA (صور/ملفات) ]===== */
 .bubble.media{padding:6px; overflow:hidden;}
 .bubble .chat-img{display:block; max-width:220px; max-height:280px; width:100%; border-radius:12px; object-fit:cover; cursor:pointer;}
 .bubble .chat-img-wrap{position:relative;}
@@ -343,13 +332,11 @@ a{color:inherit; text-decoration:none;}
 .img-viewer img{max-width:100%; max-height:100%; border-radius:8px;}
 .img-viewer .close-viewer{position:absolute; top:18px; left:18px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.15); color:#fff; border:none; font-size:18px;}
 
-/* =====[ SECTION: ADMIN CHAT VIEWER (عرض للمراجعة فقط) ]===== */
 .admin-chat-overlay{position:fixed; inset:0; z-index:350; background:var(--bg); display:none; flex-direction:column; height:100vh;}
 @supports (height: 100dvh){ .admin-chat-overlay{height:100dvh;} }
 .admin-chat-overlay.active{display:flex;}
 .admin-chat-subtitle{color:var(--warn) !important; font-weight:600;}
 
-/* ============ المصحف الشريف — Mushaf Reader ============ */
 .mushaf-overlay{position:fixed; inset:0; z-index:400; display:none; flex-direction:column; height:100vh;}
 @supports (height: 100dvh){ .mushaf-overlay{height:100dvh;} }
 .mushaf-overlay.active{display:flex;}
@@ -386,9 +373,11 @@ a{color:inherit; text-decoration:none;}
 .mushaf-overlay.mushaf-fullscreen .mushaf-tools{display:none;}
 .admin-del-tag{margin-top:6px; font-size:11px; opacity:.8; background:rgba(0,0,0,.08); border-radius:8px; padding:4px 8px;}
 [data-theme="dark"] .admin-del-tag{background:rgba(255,255,255,.08);}
+.admin-msg-del-btn{position:absolute; top:-8px; left:-8px; width:26px; height:26px; border-radius:50%; border:2px solid var(--surface); background:var(--danger); color:#fff; font-size:12px; display:flex; align-items:center; justify-content:center; z-index:2; box-shadow:0 2px 6px rgba(0,0,0,.25);}
+.admin-msg-del-btn:active{transform:scale(.9);}
+#adminChatBody .bubble{position:relative; padding-top:22px;}
 .admin-sender-tag{margin-bottom:4px; font-size:11.5px; font-weight:700; color:var(--accent);}
 
-/* =====[ SECTION: CALL UI ]===== */
 .call-overlay{
   position:fixed; inset:0; z-index:300; background:linear-gradient(180deg,var(--emerald-950),var(--emerald-900));
   display:none; flex-direction:column; align-items:center; justify-content:space-between; color:#f2ead2; padding:40px 24px calc(40px + env(safe-area-inset-bottom));
@@ -420,14 +409,12 @@ a{color:inherit; text-decoration:none;}
 .call-btn.speaker{background:rgba(255,255,255,0.12);}
 .call-btn.speaker:not(.active){background:rgba(255,255,255,0.06); opacity:.6;}
 
-/* =====[ SECTION: CALL AVATAR + SOUNDWAVE (شاشة المكالمة الكاملة) ]===== */
 .call-avatar-wrap{position:relative; display:flex; align-items:center; justify-content:center; margin:auto 0 12px;}
 .soundwave{position:absolute; inset:-30px; display:flex; align-items:center; justify-content:center; gap:5px; pointer-events:none; opacity:0; transition:opacity .25s ease;}
 .soundwave.speaking{opacity:1;}
 .soundwave span{width:4px; height:8px; border-radius:3px; background:var(--gold-400); animation:soundBar 0.9s ease-in-out infinite;}
 @keyframes soundBar{0%,100%{height:8px;} 50%{height:26px;}}
 
-/* =====[ SECTION: CALL ROOM SHEET (شيت إنشاء/انضمام غرفة الاتصال داخل الشات) ]===== */
 .call-sheet-icon{width:64px; height:64px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 14px;}
 .call-room-card{background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 16px; margin-top:6px; text-align:center;}
 .call-room-status{display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; color:var(--text-dim); margin-bottom:10px;}
@@ -440,7 +427,6 @@ a{color:inherit; text-decoration:none;}
 .call-waiting-ring .ic{position:relative; font-size:30px; z-index:1;}
 .call-invited-wrap{text-align:center; padding:6px;}
 
-/* =====[ SECTION: CALL INVITE BUBBLE (فقاعة دعوة المكالمة داخل الشات) ]===== */
 .bubble.call-invite-bubble{display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; max-width:82%; padding:12px 14px;}
 .bubble.call-invite-bubble .call-invite-ic{width:36px; height:36px; border-radius:50%; background:rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;}
 .bubble.call-invite-bubble.me .call-invite-ic{background:rgba(255,255,255,0.18);}
@@ -451,7 +437,6 @@ a{color:inherit; text-decoration:none;}
 .bubble.call-invite-bubble.me .call-invite-join-btn{background:#fff; color:var(--accent);}
 .bubble.call-invite-bubble .meta{flex-basis:100%; margin-top:2px;}
 
-/* =====[ SECTION: INCOMING CALL BANNER ]===== */
 .incoming-banner{
   position:fixed; top:14px; right:14px; left:14px; z-index:250; background:var(--surface); border:1px solid var(--border);
   border-radius:18px; padding:14px; display:none; align-items:center; gap:12px; box-shadow:var(--shadow); animation:dropIn .4s ease;
@@ -459,7 +444,6 @@ a{color:inherit; text-decoration:none;}
 .incoming-banner.active{display:flex;}
 @keyframes dropIn{from{transform:translateY(-40px); opacity:0;} to{transform:translateY(0); opacity:1;}}
 
-/* =====[ SECTION: MODAL ]===== */
 .modal-bg{position:fixed; inset:0; background:rgba(7,35,26,0.55); z-index:150; display:none; align-items:flex-end; justify-content:center;}
 .modal-bg.active{display:flex;}
 .modal-sheet{
@@ -470,17 +454,15 @@ a{color:inherit; text-decoration:none;}
 .modal-sheet h3{margin:0 0 16px;}
 .sheet-handle{width:40px; height:4px; background:var(--border); border-radius:4px; margin:0 auto 16px;}
 
-/* =====[ SECTION: STARS ]===== */
 .stars{display:flex; gap:8px; justify-content:center; font-size:34px; direction:ltr; margin:14px 0;}
 .stars span{color:var(--border); cursor:pointer; transition:transform .15s ease;}
 .stars span.filled{color:var(--gold-500); transform:scale(1.1);}
 
-/* =====[ SECTION: STATS GRID ]===== */
 .stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;}
 .stat-box{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; text-align:center;}
 .stat-box b{font-size:26px; display:block; color:var(--accent); font-family:var(--font-display);}
 .stat-box span{font-size:12px; color:var(--text-dim);}
-/* ============ ودجت مواقيت الصلاة ============ */
+
 .prayer-widget{background:linear-gradient(135deg, var(--accent), var(--emerald-700)); border-radius:var(--radius-md); padding:14px 16px; margin-bottom:16px; color:#fff;}
 [data-theme="dark"] .prayer-widget{background:linear-gradient(135deg, var(--emerald-800), var(--emerald-950));}
 .prayer-widget-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
@@ -517,7 +499,6 @@ a{color:inherit; text-decoration:none;}
 
 .key-code{font-family:monospace; direction:ltr; font-size:15px; font-weight:700; letter-spacing:1px; background:var(--surface-2); padding:4px 10px; border-radius:8px;}
 
-/* =====[ SECTION: ADMIN KEYS TOOLBAR (بحث/فلاتر/ترتيب/إجراءات جماعية) ]===== */
 .keys-toolbar{display:flex; flex-direction:column; gap:10px; margin-bottom:14px;}
 .keys-toolbar .row{display:flex; gap:8px; flex-wrap:wrap;}
 .keys-toolbar select{flex:1; min-width:110px; padding:10px 12px; border-radius:12px; border:1.5px solid var(--border); background:var(--surface); color:var(--text); font-size:13px;}
@@ -539,7 +520,7 @@ a{color:inherit; text-decoration:none;}
 <div class="admin-chat-overlay" id="adminChatOverlay">
   <div class="chat-header">
     <button class="icon-btn back-btn" id="btnCloseAdminChat">➜</button>
-    <div class="li-body"><b id="adminChatTitle">—</b><span class="admin-chat-subtitle">عرض الأدمن — للمراجعة فقط، بدون حذف</span></div>
+    <div class="li-body"><b id="adminChatTitle">—</b><span class="admin-chat-subtitle">عرض ومراجعة الأدمن — يمكن حذف أي رسالة نهائيًا</span></div>
   </div>
   <div class="chat-body" id="adminChatBody"></div>
 </div>
@@ -566,20 +547,17 @@ a{color:inherit; text-decoration:none;}
 </div>
 
 <script>
-/* =====[ SECTION: CONFIG — عدّل هنا فقط ]===== */
+
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDtyoR3uh3Cb9jPy2nAvw2_4Ine6KVeeaw",
-  authDomain: "adminscriptstarko.firebaseapp.com", // تأكد منها في Firebase Console
+  authDomain: "adminscriptstarko.firebaseapp.com",
   databaseURL: "https://adminscriptstarko-default-rtdb.firebaseio.com",
-  projectId: "adminscriptstarko", // تأكد منها في Firebase Console
+  projectId: "adminscriptstarko",
   storageBucket: "adminscriptstarko.appspot.com",
-  messagingSenderId: "310036534754", // تأكد منها في Firebase Console
+  messagingSenderId: "310036534754",
   appId: "1:310036534754:android:ba27e270c322f0164e15bb"
 };
 
-// إعدادات المكالمات الصوتية (WebRTC أصلي — بديل Agora بالكامل)
-// TURN رئيسي: ExpressTURN (حساب مخصص لينا وحدنا، 1000 جيجا مجانية شهريًا، مش متشاركة مع حد)
-// + OpenRelay كـ TURN احتياطي إضافي (طبقة أمان لو حصل أي عطل في ExpressTURN)
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "turn:free.expressturn.com:3478", username: "000000002098998661", credential: "8JkRkueS+jKwM09e669sbVq" },
@@ -588,17 +566,9 @@ const ICE_SERVERS = [
   { urls: "turn:global.relay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
 ];
 
-// رفع الصور/الملفات في الشات بقى عن طريق Cloudinary (مجاني بالكامل، من غير أي كارت بنكي)
-// بدل Firebase Storage اللي بقى محتاج خطة Blaze (مدفوعة). عشان تشغّلها:
-// 1) اعمل حساب مجاني على https://cloudinary.com (بالإيميل، من غير أي بيانات دفع)
-// 2) من الـ Dashboard، هتلاقي "Cloud name" في الأعلى — انسخه حط مكان CLOUDINARY_CLOUD_NAME تحت
-// 3) روح Settings -> Upload -> Upload presets -> Add upload preset
-//    - Signing Mode: اختار "Unsigned" (مهم جدًا، عشان الرفع يشتغل من المتصفح مباشرة)
-//    - احفظ واسم الـ preset اللي طلع انسخه حط مكان CLOUDINARY_UPLOAD_PRESET تحت
 const CLOUDINARY_CLOUD_NAME = "skqml7lh";
 const CLOUDINARY_UPLOAD_PRESET = "rawasekh_chat";
 
-/* =====[ SECTION: INIT ]===== */
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.database();
@@ -612,20 +582,14 @@ let state = {
   _rtcOfferRef:null, _rtcAnswerRef:null, _rtcOfferCandRef:null, _rtcAnswerCandRef:null,
   _rtcRole:null, _rtcRetryCount:0, _rtcAnalyserCtx:null, _rtcAnalyserRaf:null,
   studentsCache:{}, teachersCache:{}, route:'loading', routeParams:{},
-  maintenance:{enabled:false, message:''} // حالة وضع الصيانة — بتتحدث لحظيًا من siteConfig/maintenance حتى قبل تسجيل الدخول
+  maintenance:{enabled:false, message:''}
 };
 
-/* =====[ SECTION: وضع الصيانة (MAINTENANCE MODE) ]=====
-   بنسمع على siteConfig/maintenance من أول ما الصفحة تفتح (قراءة عامة مسموحة
-   للكل حتى بدون تسجيل دخول)، عشان لو الأدمن فعّله، يظهر فورًا لأي حد فاتح
-   المنصة (حتى لو لسه ماسجّلش دخول)، ما عدا الأدمن نفسه اللي لازم يقدر يدخل
-   دايمًا عشان يقفل وضع الصيانة تاني. */
 db.ref('siteConfig/maintenance').on('value', snap=>{
   state.maintenance = snap.val() || {enabled:false, message:''};
   render();
 });
 
-/* =====[ SECTION: UTILITIES ]===== */
 function $(sel,root=document){return root.querySelector(sel);}
 function $all(sel,root=document){return [...root.querySelectorAll(sel)];}
 function esc(str){ if(str==null) return ''; return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -638,7 +602,7 @@ function fmtTime(ts){ if(!ts) return ''; const d=new Date(ts); return d.toLocale
 function fmtDate(ts){ if(!ts) return ''; const d=new Date(ts); return d.toLocaleDateString('ar-EG',{day:'numeric',month:'short'}); }
 function fmtDuration(sec){ const m=Math.floor(sec/60).toString().padStart(2,'0'); const s=(sec%60).toString().padStart(2,'0'); return `${m}:${s}`; }
 function pairId(a,b){ return [a,b].sort().join('_'); }
-// مولّد كود اشتراك من 8 خانات (استبعدت الحروف/الأرقام المتشابهة بصريًا زي 0/O و1/I)
+
 function uid8(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let s = '';
@@ -650,17 +614,10 @@ function getDeviceId(){
   if(!id){ id = 'dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); localStorage.setItem('rw_device_id', id); }
   return id;
 }
-// حفظ آخر تاب مفتوح (لوحة الأدمن / تبويبات المعلمة أو الطالب) في localStorage، عشان
-// لما المستخدم يعمل Refresh للصفحة، يرجع لنفس الشاشة اللي كان فيها بدل ما يترمي
-// دايمًا على الشاشة الرئيسية (كانت المتغيرات دي بتتصفر لقيمتها الافتراضية مع كل تحميل
-// جديد للصفحة لأنها كانت مجرد متغيرات JS عادية في الذاكرة من غير أي حفظ).
+
 function saveNavTab(key, value){ try{ localStorage.setItem('rw_nav_'+key, value); }catch(_){} }
 function loadNavTab(key, fallback){ try{ return localStorage.getItem('rw_nav_'+key) || fallback; }catch(_){ return fallback; } }
 
-// حفظ الشات المفتوح حالياً (نفس فكرة saveNavTab/loadNavTab فوق) عشان لو المستخدم
-// عمل Refresh وهو جوه شات معين، يرجّعه لنفس الشات بدل ما يترمي على الشاشة الرئيسية.
-// بنخزن معاه uid صاحب الحساب (myUid) عشان لو حساب تاني سجّل دخول بعد كده على نفس
-// الجهاز/المتصفح، مانرجّعوش على شات مش بتاعه بالغلط.
 function saveChatWith(o){
   try{ localStorage.setItem('rw_chat_with', JSON.stringify({uid:o.uid, name:o.name, myUid: state.user? state.user.uid : null})); }catch(_){}
 }
@@ -675,30 +632,16 @@ function loadChatWith(myUid){
 }
 function clearChatWith(){ try{ localStorage.removeItem('rw_chat_with'); }catch(_){} }
 
-/* =====[ SECTION: BACK BUTTON / HISTORY NAV STACK ]===== */
-// المشكلة الأصلية: زرار الرجوع في الموبايل كان بيقفل التاب فورًا من أي شاشة،
-// حتى الشاشة الرئيسية، لأنه مكنش فيه غير "خطوة واحدة" في تاريخ المتصفح؛ يعني
-// أول ضغطة Back كانت بتقفل الصفحة قبل حتى ما نقدر نلحق نتصرف فيها بالجافاسكريبت.
-// الحل: من أول ما الصفحة تفتح، بنضيف "خطوة احتياطية" في history فورًا، فبيبقى
-// دايمًا فيه خطوة يرجعلها المتصفح جوه نفس الصفحة بدل ما يقفلها على طول.
-//
-// بعد كده، أي طبقة إضافية بنفتحها (شات/مودال/صورة) بتضيف خطوة زيادة فوق دي.
-// ولو المستخدم دوس Back وهو مفيش أي طبقة مفتوحة (يعني واقف على شاشة رئيسية):
-//  - أول ضغطة: بنمنعها، نورّي تنبيه "اضغط رجوع تاني للخروج"، ونعيد بناء الخطوة
-//    الاحتياطية (يعني بيفضل جوه المنصة).
-//  - ضغطة تانية خلال ثانيتين: بنسيبها تعدي عادي ويخرج فعلاً من المنصة.
-// (نفس فكرة "اضغط رجوع مرة أخرى للخروج" الموجودة في واتساب/إنستجرام وغيرهم).
 let navStack = [];
 let suppressNextPopstate = false;
 let lastRootBackAt = 0;
-const ROOT_BACK_EXIT_WINDOW = 2000; // مللي ثانية — لازم يدوس مرتين خلالها عشان يخرج فعليًا
+const ROOT_BACK_EXIT_WINDOW = 2000;
 
 function pushNav(type){
   navStack.push(type);
   try{ history.pushState({rwNav:true, depth:navStack.length}, ''); }catch(_){}
 }
-// بتتنادى لما المستخدم يقفل الطبقة بنفسه (زرار X مثلاً) مش بزرار الرجوع،
-// عشان نلغي الـ history entry اللي كنا ضفناها وقت الفتح من غير ما نعمل تكرار.
+
 function popNavIfMatches(type){
   if(navStack.length && navStack[navStack.length-1]===type){
     navStack.pop();
@@ -706,7 +649,7 @@ function popNavIfMatches(type){
     try{ history.back(); }catch(_){}
   }
 }
-// الخطوة الاحتياطية الأولى — لازم تتنفذ فورًا عند تحميل الصفحة قبل أي ضغطة Back محتملة.
+
 try{ history.pushState({rwRoot:true}, ''); }catch(_){}
 
 window.addEventListener('popstate', ()=>{
@@ -720,24 +663,19 @@ window.addEventListener('popstate', ()=>{
     else if(type==='mushaf') closeMushaf(true);
     return;
   }
-  // مفيش طبقة مفتوحة — المستخدم واقف على شاشة رئيسية وبيحاول يخرج بالكامل.
+
   const now = Date.now();
   if(now - lastRootBackAt < ROOT_BACK_EXIT_WINDOW){
-    return; // ضغطة تانية خلال الوقت المسموح — اسمح بالخروج الحقيقي
+    return;
   }
   lastRootBackAt = now;
   toast('اضغط رجوع مرة أخرى للخروج من المنصة');
-  try{ history.pushState({rwRoot:true}, ''); }catch(_){} // إعادة بناء الخطوة الاحتياطية عشان يفضل جوه المنصة
+  try{ history.pushState({rwRoot:true}, ''); }catch(_){}
 });
 
-
-/* ============ المصحف الشريف — بيانات الفهرسة (صفحات/أرباع/سور) ============
-   بيانات أرقام فقط (لا نص قرآني) لحساب الصفحة/الجزء/الحزب/الربع لأي آية، وأسماء السور.
-   نص القرآن نفسه بيتحمل مرة واحدة من الإنترنت لما المستخدم يفتح المصحف أول مرة،
-   وبعد كده بيتخزن في IndexedDB على جهاز المستخدم عشان يشتغل بدون نت في المرات اللي بعد كده. */
-const MUSHAF_PAGE_STARTS = [[0,0],[1,1],[2,1],[2,6],[2,17],[2,25],[2,30],[2,38],[2,49],[2,58],[2,62],[2,70],[2,77],[2,84],[2,89],[2,94],[2,102],[2,106],[2,113],[2,120],[2,127],[2,135],[2,142],[2,146],[2,154],[2,164],[2,170],[2,177],[2,182],[2,187],[2,191],[2,197],[2,203],[2,211],[2,216],[2,220],[2,225],[2,231],[2,234],[2,238],[2,246],[2,249],[2,253],[2,257],[2,260],[2,265],[2,270],[2,275],[2,282],[2,283],[3,1],[3,10],[3,16],[3,23],[3,30],[3,38],[3,46],[3,53],[3,62],[3,71],[3,78],[3,84],[3,92],[3,101],[3,109],[3,116],[3,122],[3,133],[3,141],[3,149],[3,154],[3,158],[3,166],[3,174],[3,181],[3,187],[3,195],[4,1],[4,7],[4,12],[4,15],[4,20],[4,24],[4,27],[4,34],[4,38],[4,45],[4,52],[4,60],[4,66],[4,75],[4,80],[4,87],[4,92],[4,95],[4,102],[4,106],[4,114],[4,122],[4,128],[4,135],[4,141],[4,148],[4,155],[4,163],[4,171],[4,176],[5,3],[5,6],[5,10],[5,14],[5,18],[5,24],[5,32],[5,37],[5,42],[5,46],[5,51],[5,58],[5,65],[5,71],[5,77],[5,83],[5,90],[5,96],[5,104],[5,109],[5,114],[6,1],[6,9],[6,19],[6,28],[6,36],[6,45],[6,53],[6,60],[6,69],[6,74],[6,82],[6,91],[6,95],[6,102],[6,111],[6,119],[6,125],[6,132],[6,138],[6,143],[6,147],[6,152],[6,158],[7,1],[7,12],[7,23],[7,31],[7,38],[7,44],[7,52],[7,58],[7,68],[7,74],[7,82],[7,88],[7,96],[7,105],[7,121],[7,131],[7,138],[7,144],[7,150],[7,156],[7,160],[7,164],[7,171],[7,179],[7,188],[7,196],[8,1],[8,9],[8,17],[8,26],[8,34],[8,41],[8,46],[8,53],[8,62],[8,70],[9,1],[9,7],[9,14],[9,21],[9,27],[9,32],[9,37],[9,41],[9,48],[9,55],[9,62],[9,69],[9,73],[9,80],[9,87],[9,94],[9,100],[9,107],[9,112],[9,118],[9,123],[10,1],[10,7],[10,15],[10,21],[10,26],[10,34],[10,43],[10,54],[10,62],[10,71],[10,79],[10,89],[10,98],[10,107],[11,6],[11,13],[11,20],[11,29],[11,38],[11,46],[11,54],[11,63],[11,72],[11,82],[11,89],[11,98],[11,109],[11,118],[12,5],[12,15],[12,23],[12,31],[12,38],[12,44],[12,53],[12,64],[12,70],[12,79],[12,87],[12,96],[12,104],[13,1],[13,6],[13,14],[13,19],[13,29],[13,35],[13,43],[14,6],[14,11],[14,19],[14,25],[14,34],[14,43],[15,1],[15,16],[15,32],[15,52],[15,71],[15,91],[16,7],[16,15],[16,27],[16,35],[16,43],[16,55],[16,65],[16,73],[16,80],[16,88],[16,94],[16,103],[16,111],[16,119],[17,1],[17,8],[17,18],[17,28],[17,39],[17,50],[17,59],[17,67],[17,76],[17,87],[17,97],[17,105],[18,5],[18,16],[18,21],[18,28],[18,35],[18,46],[18,54],[18,62],[18,75],[18,84],[18,98],[19,1],[19,12],[19,26],[19,39],[19,52],[19,65],[19,77],[19,96],[20,13],[20,38],[20,52],[20,65],[20,77],[20,88],[20,99],[20,114],[20,126],[21,1],[21,11],[21,25],[21,36],[21,45],[21,58],[21,73],[21,82],[21,91],[21,102],[22,1],[22,6],[22,16],[22,24],[22,31],[22,39],[22,47],[22,56],[22,65],[22,73],[23,1],[23,18],[23,28],[23,43],[23,60],[23,75],[23,90],[23,105],[24,1],[24,11],[24,21],[24,28],[24,32],[24,37],[24,44],[24,54],[24,59],[24,62],[25,3],[25,12],[25,21],[25,33],[25,44],[25,56],[25,68],[26,1],[26,20],[26,40],[26,61],[26,84],[26,112],[26,137],[26,160],[26,184],[26,207],[27,1],[27,14],[27,23],[27,36],[27,45],[27,56],[27,64],[27,77],[27,89],[28,6],[28,14],[28,22],[28,29],[28,36],[28,44],[28,51],[28,60],[28,71],[28,78],[28,85],[29,7],[29,15],[29,24],[29,31],[29,39],[29,46],[29,53],[29,64],[30,6],[30,16],[30,25],[30,33],[30,42],[30,51],[31,1],[31,12],[31,20],[31,29],[32,1],[32,12],[32,21],[33,1],[33,7],[33,16],[33,23],[33,31],[33,36],[33,44],[33,51],[33,55],[33,63],[34,1],[34,8],[34,15],[34,23],[34,32],[34,40],[34,49],[35,4],[35,12],[35,19],[35,31],[35,39],[35,45],[36,13],[36,28],[36,41],[36,55],[36,71],[37,1],[37,25],[37,52],[37,77],[37,103],[37,127],[37,154],[38,1],[38,17],[38,27],[38,43],[38,62],[38,84],[39,6],[39,11],[39,22],[39,32],[39,41],[39,48],[39,57],[39,68],[39,75],[40,8],[40,17],[40,26],[40,34],[40,41],[40,50],[40,59],[40,67],[40,78],[41,1],[41,12],[41,21],[41,30],[41,39],[41,47],[42,1],[42,11],[42,16],[42,23],[42,32],[42,45],[42,52],[43,11],[43,23],[43,34],[43,48],[43,61],[43,74],[44,1],[44,19],[44,40],[45,1],[45,14],[45,23],[45,33],[46,6],[46,15],[46,21],[46,29],[47,1],[47,12],[47,20],[47,30],[48,1],[48,10],[48,16],[48,24],[48,29],[49,5],[49,12],[50,1],[50,16],[50,36],[51,7],[51,31],[51,52],[52,15],[52,32],[53,1],[53,27],[53,45],[54,7],[54,28],[54,50],[55,17],[55,41],[55,68],[56,17],[56,51],[56,77],[57,4],[57,12],[57,19],[57,25],[58,1],[58,7],[58,12],[58,22],[59,4],[59,10],[59,17],[60,1],[60,6],[60,12],[61,6],[62,1],[62,9],[63,5],[64,1],[64,10],[65,1],[65,6],[66,1],[66,8],[67,1],[67,13],[67,27],[68,16],[68,43],[69,9],[69,35],[70,11],[70,40],[71,11],[72,1],[72,14],[73,1],[73,20],[74,18],[74,48],[75,20],[76,6],[76,26],[77,20],[78,1],[78,31],[79,16],[80,1],[81,1],[82,1],[83,7],[83,35],[85,1],[86,1],[87,16],[89,1],[89,24],[91,1],[92,15],[95,1],[97,1],[98,8],[100,10],[103,1],[106,1],[109,1],[112,1],[115,1]]; // فهرس 0..604 — بداية كل صفحة (سورة, آية)
-const MUSHAF_RUB_STARTS = [[0,0],[1,1],[2,26],[2,44],[2,60],[2,75],[2,92],[2,106],[2,124],[2,142],[2,158],[2,177],[2,189],[2,203],[2,219],[2,233],[2,243],[2,253],[2,263],[2,272],[2,283],[3,15],[3,33],[3,52],[3,75],[3,93],[3,113],[3,133],[3,153],[3,171],[3,186],[4,1],[4,12],[4,24],[4,36],[4,58],[4,74],[4,88],[4,100],[4,114],[4,135],[4,148],[4,163],[5,1],[5,12],[5,27],[5,41],[5,51],[5,67],[5,82],[5,97],[5,109],[6,13],[6,36],[6,59],[6,74],[6,95],[6,111],[6,127],[6,141],[6,151],[7,1],[7,31],[7,47],[7,65],[7,88],[7,117],[7,142],[7,156],[7,171],[7,189],[8,1],[8,22],[8,41],[8,61],[9,1],[9,19],[9,34],[9,46],[9,60],[9,75],[9,93],[9,111],[9,122],[10,11],[10,26],[10,53],[10,71],[10,90],[11,6],[11,24],[11,41],[11,61],[11,84],[11,108],[12,7],[12,30],[12,53],[12,77],[12,101],[13,5],[13,19],[13,35],[14,10],[14,28],[15,1],[15,50],[16,1],[16,30],[16,51],[16,75],[16,90],[16,111],[17,1],[17,23],[17,50],[17,70],[17,99],[18,17],[18,32],[18,51],[18,75],[18,99],[19,22],[19,59],[20,1],[20,55],[20,83],[20,111],[21,1],[21,29],[21,51],[21,83],[22,1],[22,19],[22,38],[22,60],[23,1],[23,36],[23,75],[24,1],[24,21],[24,35],[24,53],[25,1],[25,21],[25,53],[26,1],[26,52],[26,111],[26,181],[27,1],[27,27],[27,56],[27,82],[28,12],[28,29],[28,51],[28,76],[29,1],[29,26],[29,46],[30,1],[30,31],[30,54],[31,22],[32,11],[33,1],[33,18],[33,31],[33,51],[33,60],[34,10],[34,24],[34,46],[35,15],[35,41],[36,28],[36,60],[37,22],[37,83],[37,145],[38,21],[38,52],[39,8],[39,32],[39,53],[40,1],[40,21],[40,41],[40,66],[41,9],[41,25],[41,47],[42,13],[42,27],[42,51],[43,24],[43,57],[44,17],[45,12],[46,1],[46,21],[47,10],[47,33],[48,18],[49,1],[49,14],[50,27],[51,31],[52,24],[53,26],[54,9],[55,1],[56,1],[56,75],[57,16],[58,1],[58,14],[59,11],[60,7],[62,1],[63,4],[65,1],[66,1],[67,1],[68,1],[69,1],[70,19],[72,1],[73,20],[75,1],[76,19],[78,1],[80,1],[82,1],[84,1],[87,1],[90,1],[94,1],[100,9],[115,1]]; // فهرس 0..240 — بداية كل ربع حزب (سورة, آية)
-const MUSHAF_SURAHS = [[],[0,7,5,1,"الفاتحة",true,1],[7,286,87,40,"البقرة",false,2],[293,200,89,20,"آل عمران",false,50],[493,176,92,24,"النساء",false,77],[669,120,112,16,"المائدة",false,107],[789,165,55,20,"الأنعام",true,128],[954,206,39,24,"الأعراف",true,151],[1160,75,88,10,"الأنفال",false,177],[1235,129,113,16,"التوبة",false,187],[1364,109,51,11,"يونس",true,208],[1473,123,52,10,"هود",true,222],[1596,111,53,12,"يوسف",true,236],[1707,43,96,6,"الرعد",false,249],[1750,52,72,7,"ابراهيم",true,256],[1802,99,54,6,"الحجر",true,262],[1901,128,70,16,"النحل",true,268],[2029,111,50,12,"الإسراء",true,282],[2140,110,69,12,"الكهف",true,294],[2250,98,44,6,"مريم",true,305],[2348,135,45,8,"طه",true,313],[2483,112,73,7,"الأنبياء",true,322],[2595,78,103,10,"الحج",false,332],[2673,118,74,6,"المؤمنون",true,342],[2791,64,102,9,"النور",false,350],[2855,77,42,6,"الفرقان",true,360],[2932,227,47,11,"الشعراء",true,367],[3159,93,48,7,"النمل",true,377],[3252,88,49,8,"القصص",true,386],[3340,69,85,7,"العنكبوت",true,397],[3409,60,84,6,"الروم",true,405],[3469,34,57,3,"لقمان",true,411],[3503,30,75,3,"السجدة",true,415],[3533,73,90,9,"الأحزاب",false,418],[3606,54,58,6,"سبإ",true,428],[3660,45,43,5,"فاطر",true,435],[3705,83,41,5,"يس",true,441],[3788,182,56,5,"الصافات",true,446],[3970,88,38,5,"ص",true,453],[4058,75,59,8,"الزمر",true,459],[4133,85,60,9,"غافر",true,468],[4218,54,61,6,"فصلت",true,477],[4272,53,62,5,"الشورى",true,483],[4325,89,63,7,"الزخرف",true,490],[4414,59,64,3,"الدخان",true,496],[4473,37,65,4,"الجاثية",true,499],[4510,35,66,4,"الأحقاف",true,503],[4545,38,95,4,"محمد",false,507],[4583,29,111,4,"الفتح",false,511],[4612,18,106,2,"الحجرات",false,516],[4630,45,34,3,"ق",true,518],[4675,60,67,3,"الذاريات",true,521],[4735,49,76,2,"الطور",true,524],[4784,62,23,3,"النجم",true,526],[4846,55,37,3,"القمر",true,529],[4901,78,97,3,"الرحمن",false,532],[4979,96,46,3,"الواقعة",true,535],[5075,29,94,4,"الحديد",false,538],[5104,22,105,3,"المجادلة",false,542],[5126,24,101,3,"الحشر",false,546],[5150,13,91,2,"الممتحنة",false,549],[5163,14,109,2,"الصف",false,552],[5177,11,110,2,"الجمعة",false,553],[5188,11,104,2,"المنافقون",false,555],[5199,18,108,2,"التغابن",false,556],[5217,12,99,2,"الطلاق",false,558],[5229,12,107,2,"التحريم",false,560],[5241,30,77,2,"الملك",true,562],[5271,52,2,2,"القلم",true,565],[5323,52,78,2,"الحاقة",true,567],[5375,44,79,2,"المعارج",true,569],[5419,28,71,2,"نوح",true,571],[5447,28,40,2,"الجن",true,572],[5475,20,3,2,"المزمل",true,574],[5495,56,4,2,"المدثر",true,576],[5551,40,31,2,"القيامة",true,578],[5591,31,98,2,"الانسان",false,579],[5622,50,33,2,"المرسلات",true,581],[5672,40,80,2,"النبإ",true,582],[5712,46,81,2,"النازعات",true,584],[5758,42,24,1,"عبس",true,585],[5800,29,7,1,"التكوير",true,586],[5829,19,82,1,"الإنفطار",true,587],[5848,36,86,1,"المطففين",true,588],[5884,25,83,1,"الإنشقاق",true,589],[5909,22,27,1,"البروج",true,590],[5931,17,36,1,"الطارق",true,591],[5948,19,8,1,"الأعلى",true,592],[5967,26,68,1,"الغاشية",true,592],[5993,30,10,1,"الفجر",true,593],[6023,20,35,1,"البلد",true,594],[6043,15,26,1,"الشمس",true,595],[6058,21,9,1,"الليل",true,596],[6079,11,11,1,"الضحى",true,596],[6090,8,12,1,"الشرح",true,596],[6098,8,28,1,"التين",true,597],[6106,19,1,1,"العلق",true,597],[6125,5,25,1,"القدر",true,598],[6130,8,100,1,"البينة",false,599],[6138,8,93,1,"الزلزلة",false,599],[6146,11,14,1,"العاديات",true,600],[6157,11,30,1,"القارعة",true,600],[6168,8,16,1,"التكاثر",true,600],[6176,3,13,1,"العصر",true,601],[6179,9,32,1,"الهمزة",true,601],[6188,5,19,1,"الفيل",true,601],[6193,4,29,1,"قريش",true,602],[6197,7,17,1,"الماعون",true,602],[6204,3,15,1,"الكوثر",true,602],[6207,6,18,1,"الكافرون",true,603],[6213,3,114,1,"النصر",false,603],[6216,5,6,1,"المسد",true,603],[6221,4,22,1,"الإخلاص",true,604],[6225,5,20,1,"الفلق",true,604],[6230,6,21,1,"الناس",true,604],[6236,0]]; // فهرس 0..114 — بيانات كل سورة
+const MUSHAF_PAGE_STARTS = [[0,0],[1,1],[2,1],[2,6],[2,17],[2,25],[2,30],[2,38],[2,49],[2,58],[2,62],[2,70],[2,77],[2,84],[2,89],[2,94],[2,102],[2,106],[2,113],[2,120],[2,127],[2,135],[2,142],[2,146],[2,154],[2,164],[2,170],[2,177],[2,182],[2,187],[2,191],[2,197],[2,203],[2,211],[2,216],[2,220],[2,225],[2,231],[2,234],[2,238],[2,246],[2,249],[2,253],[2,257],[2,260],[2,265],[2,270],[2,275],[2,282],[2,283],[3,1],[3,10],[3,16],[3,23],[3,30],[3,38],[3,46],[3,53],[3,62],[3,71],[3,78],[3,84],[3,92],[3,101],[3,109],[3,116],[3,122],[3,133],[3,141],[3,149],[3,154],[3,158],[3,166],[3,174],[3,181],[3,187],[3,195],[4,1],[4,7],[4,12],[4,15],[4,20],[4,24],[4,27],[4,34],[4,38],[4,45],[4,52],[4,60],[4,66],[4,75],[4,80],[4,87],[4,92],[4,95],[4,102],[4,106],[4,114],[4,122],[4,128],[4,135],[4,141],[4,148],[4,155],[4,163],[4,171],[4,176],[5,3],[5,6],[5,10],[5,14],[5,18],[5,24],[5,32],[5,37],[5,42],[5,46],[5,51],[5,58],[5,65],[5,71],[5,77],[5,83],[5,90],[5,96],[5,104],[5,109],[5,114],[6,1],[6,9],[6,19],[6,28],[6,36],[6,45],[6,53],[6,60],[6,69],[6,74],[6,82],[6,91],[6,95],[6,102],[6,111],[6,119],[6,125],[6,132],[6,138],[6,143],[6,147],[6,152],[6,158],[7,1],[7,12],[7,23],[7,31],[7,38],[7,44],[7,52],[7,58],[7,68],[7,74],[7,82],[7,88],[7,96],[7,105],[7,121],[7,131],[7,138],[7,144],[7,150],[7,156],[7,160],[7,164],[7,171],[7,179],[7,188],[7,196],[8,1],[8,9],[8,17],[8,26],[8,34],[8,41],[8,46],[8,53],[8,62],[8,70],[9,1],[9,7],[9,14],[9,21],[9,27],[9,32],[9,37],[9,41],[9,48],[9,55],[9,62],[9,69],[9,73],[9,80],[9,87],[9,94],[9,100],[9,107],[9,112],[9,118],[9,123],[10,1],[10,7],[10,15],[10,21],[10,26],[10,34],[10,43],[10,54],[10,62],[10,71],[10,79],[10,89],[10,98],[10,107],[11,6],[11,13],[11,20],[11,29],[11,38],[11,46],[11,54],[11,63],[11,72],[11,82],[11,89],[11,98],[11,109],[11,118],[12,5],[12,15],[12,23],[12,31],[12,38],[12,44],[12,53],[12,64],[12,70],[12,79],[12,87],[12,96],[12,104],[13,1],[13,6],[13,14],[13,19],[13,29],[13,35],[13,43],[14,6],[14,11],[14,19],[14,25],[14,34],[14,43],[15,1],[15,16],[15,32],[15,52],[15,71],[15,91],[16,7],[16,15],[16,27],[16,35],[16,43],[16,55],[16,65],[16,73],[16,80],[16,88],[16,94],[16,103],[16,111],[16,119],[17,1],[17,8],[17,18],[17,28],[17,39],[17,50],[17,59],[17,67],[17,76],[17,87],[17,97],[17,105],[18,5],[18,16],[18,21],[18,28],[18,35],[18,46],[18,54],[18,62],[18,75],[18,84],[18,98],[19,1],[19,12],[19,26],[19,39],[19,52],[19,65],[19,77],[19,96],[20,13],[20,38],[20,52],[20,65],[20,77],[20,88],[20,99],[20,114],[20,126],[21,1],[21,11],[21,25],[21,36],[21,45],[21,58],[21,73],[21,82],[21,91],[21,102],[22,1],[22,6],[22,16],[22,24],[22,31],[22,39],[22,47],[22,56],[22,65],[22,73],[23,1],[23,18],[23,28],[23,43],[23,60],[23,75],[23,90],[23,105],[24,1],[24,11],[24,21],[24,28],[24,32],[24,37],[24,44],[24,54],[24,59],[24,62],[25,3],[25,12],[25,21],[25,33],[25,44],[25,56],[25,68],[26,1],[26,20],[26,40],[26,61],[26,84],[26,112],[26,137],[26,160],[26,184],[26,207],[27,1],[27,14],[27,23],[27,36],[27,45],[27,56],[27,64],[27,77],[27,89],[28,6],[28,14],[28,22],[28,29],[28,36],[28,44],[28,51],[28,60],[28,71],[28,78],[28,85],[29,7],[29,15],[29,24],[29,31],[29,39],[29,46],[29,53],[29,64],[30,6],[30,16],[30,25],[30,33],[30,42],[30,51],[31,1],[31,12],[31,20],[31,29],[32,1],[32,12],[32,21],[33,1],[33,7],[33,16],[33,23],[33,31],[33,36],[33,44],[33,51],[33,55],[33,63],[34,1],[34,8],[34,15],[34,23],[34,32],[34,40],[34,49],[35,4],[35,12],[35,19],[35,31],[35,39],[35,45],[36,13],[36,28],[36,41],[36,55],[36,71],[37,1],[37,25],[37,52],[37,77],[37,103],[37,127],[37,154],[38,1],[38,17],[38,27],[38,43],[38,62],[38,84],[39,6],[39,11],[39,22],[39,32],[39,41],[39,48],[39,57],[39,68],[39,75],[40,8],[40,17],[40,26],[40,34],[40,41],[40,50],[40,59],[40,67],[40,78],[41,1],[41,12],[41,21],[41,30],[41,39],[41,47],[42,1],[42,11],[42,16],[42,23],[42,32],[42,45],[42,52],[43,11],[43,23],[43,34],[43,48],[43,61],[43,74],[44,1],[44,19],[44,40],[45,1],[45,14],[45,23],[45,33],[46,6],[46,15],[46,21],[46,29],[47,1],[47,12],[47,20],[47,30],[48,1],[48,10],[48,16],[48,24],[48,29],[49,5],[49,12],[50,1],[50,16],[50,36],[51,7],[51,31],[51,52],[52,15],[52,32],[53,1],[53,27],[53,45],[54,7],[54,28],[54,50],[55,17],[55,41],[55,68],[56,17],[56,51],[56,77],[57,4],[57,12],[57,19],[57,25],[58,1],[58,7],[58,12],[58,22],[59,4],[59,10],[59,17],[60,1],[60,6],[60,12],[61,6],[62,1],[62,9],[63,5],[64,1],[64,10],[65,1],[65,6],[66,1],[66,8],[67,1],[67,13],[67,27],[68,16],[68,43],[69,9],[69,35],[70,11],[70,40],[71,11],[72,1],[72,14],[73,1],[73,20],[74,18],[74,48],[75,20],[76,6],[76,26],[77,20],[78,1],[78,31],[79,16],[80,1],[81,1],[82,1],[83,7],[83,35],[85,1],[86,1],[87,16],[89,1],[89,24],[91,1],[92,15],[95,1],[97,1],[98,8],[100,10],[103,1],[106,1],[109,1],[112,1],[115,1]];
+const MUSHAF_RUB_STARTS = [[0,0],[1,1],[2,26],[2,44],[2,60],[2,75],[2,92],[2,106],[2,124],[2,142],[2,158],[2,177],[2,189],[2,203],[2,219],[2,233],[2,243],[2,253],[2,263],[2,272],[2,283],[3,15],[3,33],[3,52],[3,75],[3,93],[3,113],[3,133],[3,153],[3,171],[3,186],[4,1],[4,12],[4,24],[4,36],[4,58],[4,74],[4,88],[4,100],[4,114],[4,135],[4,148],[4,163],[5,1],[5,12],[5,27],[5,41],[5,51],[5,67],[5,82],[5,97],[5,109],[6,13],[6,36],[6,59],[6,74],[6,95],[6,111],[6,127],[6,141],[6,151],[7,1],[7,31],[7,47],[7,65],[7,88],[7,117],[7,142],[7,156],[7,171],[7,189],[8,1],[8,22],[8,41],[8,61],[9,1],[9,19],[9,34],[9,46],[9,60],[9,75],[9,93],[9,111],[9,122],[10,11],[10,26],[10,53],[10,71],[10,90],[11,6],[11,24],[11,41],[11,61],[11,84],[11,108],[12,7],[12,30],[12,53],[12,77],[12,101],[13,5],[13,19],[13,35],[14,10],[14,28],[15,1],[15,50],[16,1],[16,30],[16,51],[16,75],[16,90],[16,111],[17,1],[17,23],[17,50],[17,70],[17,99],[18,17],[18,32],[18,51],[18,75],[18,99],[19,22],[19,59],[20,1],[20,55],[20,83],[20,111],[21,1],[21,29],[21,51],[21,83],[22,1],[22,19],[22,38],[22,60],[23,1],[23,36],[23,75],[24,1],[24,21],[24,35],[24,53],[25,1],[25,21],[25,53],[26,1],[26,52],[26,111],[26,181],[27,1],[27,27],[27,56],[27,82],[28,12],[28,29],[28,51],[28,76],[29,1],[29,26],[29,46],[30,1],[30,31],[30,54],[31,22],[32,11],[33,1],[33,18],[33,31],[33,51],[33,60],[34,10],[34,24],[34,46],[35,15],[35,41],[36,28],[36,60],[37,22],[37,83],[37,145],[38,21],[38,52],[39,8],[39,32],[39,53],[40,1],[40,21],[40,41],[40,66],[41,9],[41,25],[41,47],[42,13],[42,27],[42,51],[43,24],[43,57],[44,17],[45,12],[46,1],[46,21],[47,10],[47,33],[48,18],[49,1],[49,14],[50,27],[51,31],[52,24],[53,26],[54,9],[55,1],[56,1],[56,75],[57,16],[58,1],[58,14],[59,11],[60,7],[62,1],[63,4],[65,1],[66,1],[67,1],[68,1],[69,1],[70,19],[72,1],[73,20],[75,1],[76,19],[78,1],[80,1],[82,1],[84,1],[87,1],[90,1],[94,1],[100,9],[115,1]];
+const MUSHAF_SURAHS = [[],[0,7,5,1,"الفاتحة",true,1],[7,286,87,40,"البقرة",false,2],[293,200,89,20,"آل عمران",false,50],[493,176,92,24,"النساء",false,77],[669,120,112,16,"المائدة",false,107],[789,165,55,20,"الأنعام",true,128],[954,206,39,24,"الأعراف",true,151],[1160,75,88,10,"الأنفال",false,177],[1235,129,113,16,"التوبة",false,187],[1364,109,51,11,"يونس",true,208],[1473,123,52,10,"هود",true,222],[1596,111,53,12,"يوسف",true,236],[1707,43,96,6,"الرعد",false,249],[1750,52,72,7,"ابراهيم",true,256],[1802,99,54,6,"الحجر",true,262],[1901,128,70,16,"النحل",true,268],[2029,111,50,12,"الإسراء",true,282],[2140,110,69,12,"الكهف",true,294],[2250,98,44,6,"مريم",true,305],[2348,135,45,8,"طه",true,313],[2483,112,73,7,"الأنبياء",true,322],[2595,78,103,10,"الحج",false,332],[2673,118,74,6,"المؤمنون",true,342],[2791,64,102,9,"النور",false,350],[2855,77,42,6,"الفرقان",true,360],[2932,227,47,11,"الشعراء",true,367],[3159,93,48,7,"النمل",true,377],[3252,88,49,8,"القصص",true,386],[3340,69,85,7,"العنكبوت",true,397],[3409,60,84,6,"الروم",true,405],[3469,34,57,3,"لقمان",true,411],[3503,30,75,3,"السجدة",true,415],[3533,73,90,9,"الأحزاب",false,418],[3606,54,58,6,"سبإ",true,428],[3660,45,43,5,"فاطر",true,435],[3705,83,41,5,"يس",true,441],[3788,182,56,5,"الصافات",true,446],[3970,88,38,5,"ص",true,453],[4058,75,59,8,"الزمر",true,459],[4133,85,60,9,"غافر",true,468],[4218,54,61,6,"فصلت",true,477],[4272,53,62,5,"الشورى",true,483],[4325,89,63,7,"الزخرف",true,490],[4414,59,64,3,"الدخان",true,496],[4473,37,65,4,"الجاثية",true,499],[4510,35,66,4,"الأحقاف",true,503],[4545,38,95,4,"محمد",false,507],[4583,29,111,4,"الفتح",false,511],[4612,18,106,2,"الحجرات",false,516],[4630,45,34,3,"ق",true,518],[4675,60,67,3,"الذاريات",true,521],[4735,49,76,2,"الطور",true,524],[4784,62,23,3,"النجم",true,526],[4846,55,37,3,"القمر",true,529],[4901,78,97,3,"الرحمن",false,532],[4979,96,46,3,"الواقعة",true,535],[5075,29,94,4,"الحديد",false,538],[5104,22,105,3,"المجادلة",false,542],[5126,24,101,3,"الحشر",false,546],[5150,13,91,2,"الممتحنة",false,549],[5163,14,109,2,"الصف",false,552],[5177,11,110,2,"الجمعة",false,553],[5188,11,104,2,"المنافقون",false,555],[5199,18,108,2,"التغابن",false,556],[5217,12,99,2,"الطلاق",false,558],[5229,12,107,2,"التحريم",false,560],[5241,30,77,2,"الملك",true,562],[5271,52,2,2,"القلم",true,565],[5323,52,78,2,"الحاقة",true,567],[5375,44,79,2,"المعارج",true,569],[5419,28,71,2,"نوح",true,571],[5447,28,40,2,"الجن",true,572],[5475,20,3,2,"المزمل",true,574],[5495,56,4,2,"المدثر",true,576],[5551,40,31,2,"القيامة",true,578],[5591,31,98,2,"الانسان",false,579],[5622,50,33,2,"المرسلات",true,581],[5672,40,80,2,"النبإ",true,582],[5712,46,81,2,"النازعات",true,584],[5758,42,24,1,"عبس",true,585],[5800,29,7,1,"التكوير",true,586],[5829,19,82,1,"الإنفطار",true,587],[5848,36,86,1,"المطففين",true,588],[5884,25,83,1,"الإنشقاق",true,589],[5909,22,27,1,"البروج",true,590],[5931,17,36,1,"الطارق",true,591],[5948,19,8,1,"الأعلى",true,592],[5967,26,68,1,"الغاشية",true,592],[5993,30,10,1,"الفجر",true,593],[6023,20,35,1,"البلد",true,594],[6043,15,26,1,"الشمس",true,595],[6058,21,9,1,"الليل",true,596],[6079,11,11,1,"الضحى",true,596],[6090,8,12,1,"الشرح",true,596],[6098,8,28,1,"التين",true,597],[6106,19,1,1,"العلق",true,597],[6125,5,25,1,"القدر",true,598],[6130,8,100,1,"البينة",false,599],[6138,8,93,1,"الزلزلة",false,599],[6146,11,14,1,"العاديات",true,600],[6157,11,30,1,"القارعة",true,600],[6168,8,16,1,"التكاثر",true,600],[6176,3,13,1,"العصر",true,601],[6179,9,32,1,"الهمزة",true,601],[6188,5,19,1,"الفيل",true,601],[6193,4,29,1,"قريش",true,602],[6197,7,17,1,"الماعون",true,602],[6204,3,15,1,"الكوثر",true,602],[6207,6,18,1,"الكافرون",true,603],[6213,3,114,1,"النصر",false,603],[6216,5,6,1,"المسد",true,603],[6221,4,22,1,"الإخلاص",true,604],[6225,5,20,1,"الفلق",true,604],[6230,6,21,1,"الناس",true,604],[6236,0]];
 
 const MUSHAF_TEXT_URL = 'https://cdn.jsdelivr.net/npm/quran-json@3.1.2/dist/quran.json';
 const MUSHAF_DB_NAME = 'rawasekhMushafDB';
@@ -748,7 +686,7 @@ const mushafState = {
   fontSize: parseInt(localStorage.getItem('rw_mushaf_fontsize')||'3', 10),
   theme: localStorage.getItem('rw_mushaf_theme') || 'dark',
   fullscreen: false,
-  text: null, // يتم ملؤه بعد التحميل: { [surahId]: ["نص آية1","نص آية2", ...] }
+  text: null,
   loading: false
 };
 
@@ -783,7 +721,6 @@ function mushafSurahMeta(id){
 }
 function mushafSurahAtPage(page){ return MUSHAF_PAGE_STARTS[page][0]; }
 
-// بيرجع مجموعة نطاقات (سورة, من آية, لحد آية) اللي بتتضمنها صفحة معينة
 function mushafPageRanges(page){
   const start = MUSHAF_PAGE_STARTS[page];
   const end = page < 604 ? MUSHAF_PAGE_STARTS[page+1] : [115,1];
@@ -801,7 +738,6 @@ function mushafPageRanges(page){
 const MUSHAF_EASTERN_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
 function mushafEasternNum(n){ return String(n).split('').map(c => /[0-9]/.test(c) ? MUSHAF_EASTERN_DIGITS[+c] : c).join(''); }
 
-// ============ IndexedDB — تخزين نص القرآن محليًا بعد أول تحميل ============
 function mushafIdbOpen(){
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(MUSHAF_DB_NAME, 1);
@@ -830,22 +766,22 @@ async function mushafIdbSet(key, value){
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
-  }catch(_){ /* تجاهل — التخزين تحسين إضافي مش أساسي لعمل الميزة */ }
+  }catch(_){   }
 }
 
 async function mushafLoadText(){
   if(mushafState.text) return mushafState.text;
-  // 1) نجرب الكاش المحلي الأول (يشتغل حتى بدون إنترنت بعد أول استخدام)
+
   const cached = await mushafIdbGet('fullText');
   if(cached){ mushafState.text = cached; return cached; }
-  // 2) لو مفيش كاش، نحمل من الإنترنت مرة واحدة بس
+
   const res = await fetch(MUSHAF_TEXT_URL);
   if(!res.ok) throw new Error('فشل تحميل نص المصحف');
   const raw = await res.json();
   const map = {};
   raw.forEach(surahObj => { map[surahObj.id] = surahObj.verses.map(v => v.text); });
   mushafState.text = map;
-  mushafIdbSet('fullText', map); // تخزين بالخلفية، من غير ما نستنى
+  mushafIdbSet('fullText', map);
   return map;
 }
 
@@ -869,7 +805,7 @@ function bindMushafEventsOnce(){
   if(mushafEventsBound) return;
   mushafEventsBound = true;
   $('#btnCloseMushaf').addEventListener('click', () => closeMushaf());
-  $('#btnMushafPrev').addEventListener('click', () => mushafGoPage(mushafState.page + 1)); // السابقة = رقم صفحة أكبر (تصفح من اليمين لليسار)
+  $('#btnMushafPrev').addEventListener('click', () => mushafGoPage(mushafState.page + 1));
   $('#btnMushafNext').addEventListener('click', () => mushafGoPage(mushafState.page - 1));
   $('#btnMushafIndex').addEventListener('click', () => mushafRenderIndex());
   $('#btnMushafTheme').addEventListener('click', () => {
@@ -888,7 +824,7 @@ function bindMushafEventsOnce(){
   $('#btnMushafFontMinus').addEventListener('click', () => mushafSetFontSize(mushafState.fontSize - 1));
   $('#btnMushafSearchGo').addEventListener('click', mushafDoSearch);
   $('#mushafSearchInput').addEventListener('keydown', e => { if(e.key === 'Enter') mushafDoSearch(); });
-  // Swipe للتنقل بين الصفحات على الموبايل
+
   let touchStartX = null;
   $('#mushafBody').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
   $('#mushafBody').addEventListener('touchend', e => {
@@ -896,8 +832,8 @@ function bindMushafEventsOnce(){
     const dx = e.changedTouches[0].clientX - touchStartX;
     touchStartX = null;
     if(Math.abs(dx) < 60) return;
-    if(dx < 0) mushafGoPage(mushafState.page - 1); // سحب لليسار → الصفحة التالية
-    else mushafGoPage(mushafState.page + 1); // سحب لليمين → الصفحة السابقة
+    if(dx < 0) mushafGoPage(mushafState.page - 1);
+    else mushafGoPage(mushafState.page + 1);
   }, {passive:true});
 }
 
@@ -934,7 +870,7 @@ async function mushafRenderPage(page){
       $('#btnMushafRetry')?.addEventListener('click', () => mushafRenderPage(page));
       return;
     }
-    if(mushafState.page !== page) return; // المستخدم غيّر الصفحة أثناء التحميل
+    if(mushafState.page !== page) return;
   }
 
   const ranges = mushafPageRanges(page);
@@ -979,11 +915,11 @@ function mushafRenderIndex(){
 function mushafDoSearch(){
   let raw = $('#mushafSearchInput').value.trim();
   if(!raw) return;
-  // تحويل الأرقام العربية (٠-٩) لأرقام إنجليزية — كتير من لوحات المفاتيح العربية بتكتب بيها افتراضيًا
+
   raw = raw.replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - '٠'.charCodeAt(0)));
   const numMatch = raw.match(/(\d+)/);
   const num = numMatch ? parseInt(numMatch[1], 10) : null;
-  // بنشيل الأرقام والمسافات و"ال" التعريف عشان "الجزء ٥" و"جزء5" و"ج 5" كلهم يشتغلوا
+
   const normalized = raw.replace(/[\d\s]/g, '').replace(/^ال/, '');
 
   if(/^(جزء|ج)/.test(normalized) && num){
@@ -998,11 +934,11 @@ function mushafDoSearch(){
   if(/^(صفحة|صفحه|ص)/.test(normalized) && num){
     if(num >= 1 && num <= 604){ mushafGoPage(num); return; }
   }
-  // رقم بمفرده من غير كلمة قبله → نعتبره رقم صفحة (الاستخدام الأكثر شيوعًا)
+
   if(num !== null && /^\d+$/.test(raw.trim())){
     if(num >= 1 && num <= 604){ mushafGoPage(num); return; }
   }
-  // مفيش رقم → نبحث باسم السورة
+
   const needle = raw.replace(/^(سورة|سوره)\s*/,'').trim();
   for(let i = 1; i <= 114; i++){
     const m = mushafSurahMeta(i);
@@ -1011,11 +947,8 @@ function mushafDoSearch(){
   toast('مفيش نتيجة مطابقة — جرب اسم سورة أو رقم صفحة/جزء/حزب');
 }
 
-
 function showModal(html){ $('#modalSheet').innerHTML = `<div class="sheet-handle"></div>${html}`; $('#modalBg').classList.add('active'); pushNav('modal'); }
-// بتحدّث محتوى المودال المفتوح حاليًا من غير ما تضيف خطوة جديدة في تاريخ
-// المتصفح (لعكس showModal اللي بتضيف خطوة كل مرة) — مهم لأي مودال بيعاد رسمه
-// أكتر من مرة وهو مفتوح (زي مودال مواعيد الحلقة) عشان زرار الرجوع يفضل شغال بضغطة واحدة
+
 function updateModalContent(html){ $('#modalSheet').innerHTML = `<div class="sheet-handle"></div>${html}`; }
 function hideModal(fromBack){ $('#modalBg').classList.remove('active'); if(typeof teardownCallSheetWatcher==='function') teardownCallSheetWatcher(); if(!fromBack) popNavIfMatches('modal'); }
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -1049,7 +982,6 @@ function setTheme(mode){
   setTheme(saved);
 })();
 
-/* =====[ SECTION: SECURITY ALERT LOGGER ]===== */
 function logSecurityAlert(type, detail){
   try{
     db.ref('security_alerts').push({
@@ -1058,11 +990,9 @@ function logSecurityAlert(type, detail){
   }catch(e){}
 }
 
-/* =====[ SECTION: RENDER ROOT ]===== */
 function render(){
   const app = $('#app');
-  // بوابة وضع الصيانة: بتتفعّل قبل أي حاجة تانية، ولأي حد مش أدمن (حتى لو لسه
-  // مسجّلش دخول أصلاً)، عشان الأدمن يفضل قادر يدخل يقفل الصيانة تاني.
+
   const isAdminUser = !!(state.profile && state.profile.role==='admin');
   if(state.maintenance && state.maintenance.enabled && !isAdminUser && state.route!=='loading'){
     app.innerHTML = screenMaintenance(); bindMaintenanceEvents(); return;
@@ -1073,14 +1003,16 @@ function render(){
   if(state.route==='banned'){ app.innerHTML = screenBanned(); bindBannedEvents(); return; }
   if(state.route==='expired'){ app.innerHTML = screenExpired(); bindExpiredEvents(); return; }
 
-  if(state.chatWith){ app.innerHTML = screenChat(); bindChatEvents(); return; }
+  if(state.chatWith){
+    if(!document.querySelector('.chat-screen')){ app.innerHTML = screenChat(); bindChatEvents(); }
+    return;
+  }
 
   if(state.profile && state.profile.role==='admin'){ app.innerHTML = screenAdminShell(); bindAdminEvents(); return; }
   if(state.profile && state.profile.role==='teacher'){ app.innerHTML = screenTeacherShell(); bindTeacherEvents(); return; }
   if(state.profile && state.profile.role==='student'){ app.innerHTML = screenStudentShell(); bindStudentEvents(); return; }
 }
 
-/* =====[ SECTION: AUTH SCREENS ]===== */
 let authTab = 'login';
 let regRole = null;
 function screenAuth(){
@@ -1150,19 +1082,13 @@ async function doRegister(){
   const btn = $('#btnRegister'); btn.disabled=true; btn.textContent='جارِ الإنشاء...';
   let cred = null, claimed = false;
   try{
-    // فحص سريع (قراءة عامة مسموحة للكل حتى بدون تسجيل دخول) عشان منعملش حساب Auth
-    // من غير داعي لو الاسم مأخوذ أصلاً
+
     const preSnap = await db.ref('usernames/'+cleanUname).get();
     if(preSnap.exists()){ toast('اسم المستخدم مستخدم بالفعل'); return; }
 
-    // لازم ننشئ حساب الـ Auth الأول، لأن رول الفايربيس بتشترط auth != null
-    // على أي كتابة تحت usernames/ — الحجز مينفعش يحصل قبل تسجيل الدخول
     cred = await auth.createUserWithEmailAndPassword(usernameToEmail(cleanUname), pass);
     const newUid = cred.user.uid;
 
-    // حجز اسم المستخدم بشكل ذرّي (transaction) بدل قراءة-ثم-كتابة، عشان نمنع
-    // احتمال (نادر لكن حقيقي) إن اتنين يسجلوا بنفس اليوزرنيم في نفس اللحظة بالظبط.
-    // القيمة المكتوبة لازم تبقى uid الحقيقي (مش placeholder) عشان تتطابق مع الرول.
     const txResult = await db.ref('usernames/'+cleanUname).transaction(cur => cur===null ? newUid : undefined);
     if(!txResult.committed){
       toast('اسم المستخدم مستخدم بالفعل');
@@ -1182,7 +1108,6 @@ async function doRegister(){
   } finally { if(btn){btn.disabled=false; btn.textContent='إنشاء الحساب';} }
 }
 
-/* =====[ SECTION: PENDING / BANNED SCREENS ]===== */
 function screenPending(){
   return `<div class="screen active"><div class="container">
     <div class="brand-hero">
@@ -1209,23 +1134,11 @@ async function redeemCode(){
   const myUid = state.user.uid;
   const myRole = state.profile.role;
   try{
-    // عيب #7 (مُصلَح): كانت العملية عبارة عن "قراءة ثم كتابة" عادية (get ثم update)،
-    // يعني لو شخصين ضربوا نفس الكود في نفس اللحظة بالضبط، الاتنين ممكن يعدّوا فحص
-    // "الكود متاح" قبل ما أي واحد يكتب، والكود يُستخدم مرتين. دلوقتي بنستخدم
-    // transaction ذرّية زي حجز اسم المستخدم بالظبط: فايربيس بيضمن إن التعديل
-    // يحصل مرة واحدة بس على أحدث نسخة من البيانات، وأي محاولة تانية في نفس
-    // اللحظة هتتلغى (تترجع undefined) تلقائيًا.
-    // عيب جديد (مُصلَح): لو المتصفح مفتحش الكود ده قبل كده، فايربيس بينادي هنا
-    // أول مرة بقيمة null (مفيش نسخة محفوظة محليًا) قبل ما يجيب القيمة الحقيقية
-    // من السيرفر. كان الكود القديم بيقفل ويلغي المعاملة نهائيًا فور ما يشوف null
-    // (return بدون قيمة = إلغاء نهائي)، وده بيمنع فايربيس من الرجوع بالقيمة
-    // الحقيقية والمحاولة تاني — فأي كود صحيح فعليًا كان بيترفض بغلط من أول مرة
-    // يُقرأ فيها. دلوقتي بنرجّع null (مش undefined) في الحالة دي، وده بيخلي
-    // فايربيس يقارنها بالسيرفر ويعيد نداء الدالة تلقائيًا بالقيمة الحقيقية.
+
     const txResult = await db.ref('codes/'+code).transaction(cur=>{
-      if(cur===null) return null; // نسيب فايربيس يتأكد من السيرفر ويعيد المحاولة بدل الإلغاء الفوري
-      if(cur.status!=='active' || cur.deviceId) return; // مستخدم أو غير صالح — نلغي المعاملة عن قصد
-      if(cur.type !== myRole) return; // نوع غير مطابق لدور المستخدم — نلغي المعاملة عن قصد
+      if(cur===null) return null;
+      if(cur.status!=='active' || cur.deviceId) return;
+      if(cur.type !== myRole) return;
       return {
         ...cur,
         deviceId: dId,
@@ -1237,9 +1150,7 @@ async function redeemCode(){
 
     const finalCodeData = txResult.committed ? txResult.snapshot.val() : null;
     if(!finalCodeData || finalCodeData.assignedUid !== myUid){
-      // مش احنا اللي فزنا بالمعاملة (أو الكود مش موجود أصلاً) — نجيب سبب واضح ودقيق
-      // بدل رسالة عامة، عشان يبان فورًا هل السبب: كود غير موجود / نوع غير مطابق /
-      // مربوط بجهاز فعلاً / متعطّل من الأدمن / منتهي الصلاحية
+
       const snap = await db.ref('codes/'+code).get();
       if(!snap.exists()){ toast('الكود غير موجود — تأكد إنك كتبته صح'); }
       else {
@@ -1258,10 +1169,7 @@ async function redeemCode(){
     const subUpdate = isTrial
       ? { codeId: code, type: 'trial', status:'trial', expiresAt: Date.now() + 3*24*60*60*1000 }
       : { codeId: code, type: finalCodeData.plan||finalCodeData.type, status:'active', expiresAt: finalCodeData.expiresAt||null };
-    // كتابة واحدة ذرّية (multi-path update) بدل كتابتين منفصلتين (subscription ثم status):
-    // لو الكتابة الأولى نجحت والتانية فشلت (مثلاً بسبب صلاحيات/قواعد Firebase)، كان الحساب
-    // يفضل معلّق (status لسه pending) رغم إن الكود اتحجز واتحرق، فالمستخدم يحتاج كود تاني
-    // من غير ما يبين له سبب واضح. دلوقتي الاتنين بيتكتبوا مع بعض أو محدش منهم يتكتب.
+
     await db.ref().update({
       ['users/'+myUid+'/subscription']: subUpdate,
       ['users/'+myUid+'/status']: 'active'
@@ -1269,8 +1177,7 @@ async function redeemCode(){
     toast('تم تفعيل حسابك بنجاح 🎉');
   }catch(e){
     console.error('redeemCode failed:', e);
-    // مدة أطول للرسالة عشان لو السبب صلاحيات (Permission Denied) في Firebase Rules
-    // يبان واضح ومتختفيش بسرعة، بدل ما يظهر إحساس إن "مفيش حاجة حصلت"
+
     toast('تعذر التفعيل: ' + (e.message||'حاول مرة أخرى أو تواصل مع الأدمن'), 5000);
   } finally { if(btn){btn.disabled=false; btn.textContent='تفعيل الحساب';} }
 }
@@ -1282,8 +1189,6 @@ function screenBanned(){
 }
 function bindBannedEvents(){ $('#btnLogoutBanned')?.addEventListener('click', ()=>auth.signOut()); }
 
-// شاشة وضع الصيانة — بتظهر لأي حد مش أدمن لما الأدمن يفعّل الصيانة من لوحته.
-// فيها زرار مخفي لدخول الأدمن (تسجيل دخول عادي) عشان يقدر يوصل للوحته ويقفلها.
 function screenMaintenance(){
   const msg = (state.maintenance && state.maintenance.message) || 'المنصة متوقفة مؤقتًا لإجراء بعض التحديثات، برجاء المحاولة لاحقًا 🌙';
   return `<div class="screen active"><div class="container">
@@ -1310,8 +1215,6 @@ function bindMaintenanceEvents(){
   });
 }
 
-// عيب #9 (مُصلَح): شاشة جديدة تظهر تلقائيًا لما التجربة (trial) تنتهي،
-// وتسمح للمستخدم يفعّل بكود جديد بدل ما الحساب يفضل "active" للأبد.
 function screenExpired(){
   return `<div class="screen active"><div class="container">
     <div class="brand-hero">
@@ -1328,17 +1231,12 @@ function screenExpired(){
 }
 function bindExpiredEvents(){ bindPendingEvents(); }
 
-/* =====[ SECTION: AUTH STATE / ROUTING ]===== */
 let profileRef = null;
 
-// عيب #1-4 (مُصلَح): كل المتغيرات الـ Global دي كانت بتفضل عالقة بعد تسجيل
-// الخروج، فلو حساب تاني سجّل دخول في نفس المتصفح كان ممكن يشوف بيانات
-// الحساب اللي قبله (شات، طالب/ة نشطة، معلم مخصص، تاب مفتوح...). الدالة دي
-// بترجع كل حاجة لوضعها الافتراضي في كل مرة يتم فيها تسجيل خروج.
 function resetLocalState(){
   state.chatWith = null;
-  clearChatWith(); // مسح أي شات محفوظ في localStorage عند تسجيل الخروج (زي باقي حالات النافيجيشن تحت)
-  navStack = []; // تصفير طبقات الرجوع (شات/مودال/صورة) المرتبطة بالحساب اللي خرج
+  clearChatWith();
+  navStack = [];
   state.currentChatWith = null;
   state.currentCallId = null;
   if(state.callTimerInt){ clearInterval(state.callTimerInt); }
@@ -1349,9 +1247,7 @@ function resetLocalState(){
   state.studentsCache = {};
   state.teachersCache = {};
   state.routeParams = {};
-  // مهم: تصفير presenceRef برضو، عشان setupPresence() تقدر تسجّل الحضور
-  // للحساب الجديد اللي هيدخل بعد كده في نفس الـ tab (كانت هي دي القيمة
-  // اللي بتخلي setupPresence تعمل return بدري وتتجاهل الحساب الجديد).
+
   state.presenceRef = null;
   myTeacherCache = null;
   teacherActiveStudent = null;
@@ -1363,16 +1259,13 @@ function resetLocalState(){
   regRole = null;
   usersFilter = 'all';
   usersState = { search:'', sort:'newest', page:1 };
-  // تفكيك مستمع شاشة مراجعة شات الأدمن (لو كانت مفتوحة) عشان مايفضلش شغال في الخلفية بعد الخروج
+
   if(adminChatViewRef){ adminChatViewRef.off('value', adminChatViewCb); adminChatViewRef=null; adminChatViewCb=null; }
   $('#adminChatOverlay')?.classList.remove('active');
   stopTrialWatch();
   stopNotifListeners();
 }
 
-// عيب #9 (مُصلَح): مفيش أي كود كان بيتحقق من expiresAt للاشتراك التجريبي،
-// يعني حساب "تجربة 3 أيام" كان فعليًا مش بينتهي أبدًا. الدالة دي بتفحص
-// وقت انتهاء التجربة وترجع true/false.
 function isTrialExpired(p){
   return !!(p && p.subscription && p.subscription.status==='trial' && p.subscription.expiresAt && Date.now() > p.subscription.expiresAt);
 }
@@ -1380,13 +1273,10 @@ async function expireTrialIfNeeded(uid, p){
   if(isTrialExpired(p) && p.status!=='expired'){
     try{
       await db.ref('users/'+uid).update({status:'expired', 'subscription/status':'expired'});
-    }catch(e){ /* لو فشل التحديث هيتحاول تاني في المرة الجاية */ }
+    }catch(e){   }
   }
 }
-// فحص دوري كل دقيقة وهو التطبيق مفتوح، عشان التجربة تنتهي فورًا فور
-// انتهاء المدة الزمنية حتى لو مفيش تعديل جديد في قاعدة البيانات يستدعي
-// المستمع (onAuthStateChanged/profileRef بيتفعّلوا فقط عند تغيّر الداتا،
-// مش عند مرور الوقت).
+
 let trialCheckInterval = null;
 function startTrialWatch(){
   stopTrialWatch();
@@ -1412,8 +1302,8 @@ auth.onAuthStateChanged(user=>{
   teardownChat(); teardownCallListener(); teardownCallPeerWatch();
   if(!user){ state.user=null; state.profile=null; state.route='auth'; resetLocalState(); state._chatRestoreDone=false; render(); return; }
   state.user = user;
-  state.sessionStartedAt = Date.now(); // يُستخدم للتحقق من أوامر "إجبار تسجيل الخروج" الصادرة من الأدمن بعد هذه اللحظة
-  // فحص إضافي: عقدة admins/{uid}:true منفصلة عن users/ — بعض المشاريع بتستخدمها بدل role:"admin"
+  state.sessionStartedAt = Date.now();
+
   db.ref('admins/'+user.uid).get().then(adminSnap=>{
     const isAdminNode = adminSnap.exists() && adminSnap.val()===true;
     profileRef = db.ref('users/'+user.uid);
@@ -1426,7 +1316,7 @@ auth.onAuthStateChanged(user=>{
       render();
     });
   }).catch(()=>{
-    // لو مفيش صلاحية قراءة admins/ أصلاً، كمّل بالمسار العادي
+
     profileRef = db.ref('users/'+user.uid);
     profileRef.on('value', snap=>{
       const p = snap.val();
@@ -1438,8 +1328,7 @@ auth.onAuthStateChanged(user=>{
     });
   });
 });
-// استرجاع الشات المحفوظ (لو موجود) مرة واحدة بس لكل جلسة/تسجيل دخول، عشان لو
-// المستخدم قفل الشات بنفسه بعد الاسترجاع، ميرجعش له تاني مع أي تحديث تاني للبروفايل.
+
 function restoreChatIfNeeded(){
   if(state.chatWith || state._chatRestoreDone) return;
   if(!state.profile || (state.profile.role!=='teacher' && state.profile.role!=='student')) return;
@@ -1455,13 +1344,6 @@ function setupPresence(){
   r.set({online:true, lastSeen: firebase.database.ServerValue.TIMESTAMP});
 }
 
-/* =====[ SECTION: نظام الإشعارات (NOTIFICATIONS) ]=====
-   نوعين من الإشعارات:
-   1) إشعارات شخصية (notifications/{uid}/...) — بتتبعت لحد معيّن، زي "رسالة
-      جديدة من فلان" أو رسالة مباشرة من الأدمن لمستخدم بعينه.
-   2) إشعارات عامة (broadcastNotifications/...) — الأدمن يقدر يبعتها لكل
-      المستخدمين أو لفئة معيّنة (معلمات فقط / طلاب فقط)، وكل مستخدم بيتابع
-      آخر وقت شافها فيه (notifSeen/{uid}) عشان نحسب لو فيه جديد مالحقش يشوفه. */
 let notifState = { items:{}, unread:0, broadcastItems:{}, lastSeenBroadcast:0 };
 let notifPersonalRef=null, notifPersonalCb=null, notifBroadcastRef=null, notifBroadcastCb=null;
 function startNotifListeners(){
@@ -1497,8 +1379,7 @@ function recomputeUnread(){
   });
   notifState.unread = n;
 }
-// بنحدّث شكل شارة العدد مباشرة على أي زرار جرس موجود في الصفحة حاليًا، من غير
-// ما نعمل render() كامل (عشان مانكسرش أي شاشة مفتوحة زي الشات وقت وصول إشعار).
+
 function updateNotifBadgeUI(){
   const n = notifState.unread;
   $all('.notif-badge').forEach(el=>{
@@ -1521,10 +1402,9 @@ function pushMessageNotification(toUid, previewText){
       chatId: pairId(state.user.uid, toUid), text: String(previewText||'').slice(0,150),
       ts: firebase.database.ServerValue.TIMESTAMP, read:false
     });
-  }catch(_){ /* تحسين إضافي فقط — مايوقفش إرسال الرسالة لو فشل */ }
+  }catch(_){   }
 }
-// لما المستخدم يفتح شات مع حد معيّن، أي إشعارات رسائل واردة من نفس الشخص
-// بتتشال خالص (مش بس تتعلّم مقروءة) لأنه أصلاً بيبص على المحادثة دلوقتي ومحتاجهاش تفضل متخزنة.
+
 function markChatNotificationsRead(otherUid){
   if(!state.user) return;
   db.ref('notifications/'+state.user.uid).orderByChild('fromUid').equalTo(otherUid).once('value').then(snap=>{
@@ -1563,12 +1443,11 @@ function openNotifPanel(){
       openChat(fromUid, el.dataset.notifFromName || 'مستخدم');
     });
   });
-  // بمجرد ما المستخدم يفتح لوحة الإشعارات ويشوفها، الإشعارات الشخصية (رسالة أو
-  // من الإدارة) بتتشال خالص من القاعدة — مفيش داعي تفضل متخزنة لحد ما حد يشوفها.
+
   const idsToDelete = {};
   personal.forEach(n=>{ idsToDelete[n.id]=null; });
   if(Object.keys(idsToDelete).length) db.ref('notifications/'+state.user.uid).update(idsToDelete).catch(()=>{});
-  // وكمان بنسجّل إن المستخدم شاف الإشعارات العامة لحد دلوقتي
+
   const nowTs = Date.now();
   db.ref('notifSeen/'+state.user.uid).set(nowTs).catch(()=>{});
   notifState.lastSeenBroadcast = nowTs;
@@ -1577,9 +1456,8 @@ function openNotifPanel(){
 }
 function logout(){ auth.signOut(); }
 
-/* =====[ SECTION: ADMIN PANEL ]===== */
 let adminView = 'dashboard';
-// حالة لوحة المفاتيح: بحث/فلاتر/ترتيب/صفحات/تحديد جماعي
+
 let keysState = { search:'', status:'all', type:'all', sort:'newest', page:1, selected:new Set() };
 const KEYS_PAGE_SIZE = 12;
 function planDurationDays(plan){ return plan==='trial'?3 : plan==='monthly'?30 : plan==='quarterly'?90 : 30; }
@@ -1632,13 +1510,9 @@ function bindAdminViewEvents(){
   if(adminView==='settings'){ bindAdminSettingsEvents(); }
 }
 
-// سجل عمليات الإدارة — بيسجّل أهم العمليات الحساسة (توليد/حذف مفاتيح، تغيير أدوار، حذف حسابات)
-// عشان لو حصل خطأ أو استفسار بعدين، يبقى في مرجع واضح لمين عمل إيه وإمتى.
-// عداد الرسائل الإجمالي — بيتحدّث تلقائيًا مع كل رسالة (نص/صورة/صوت/ملف/توجيه)
-// عشان لوحة تحكم الأدمن تقرأ رقم واحد بدل ما تفحص كل المحادثات في كل مرة.
 function bumpMessagesCounter(){
   try{ db.ref('stats/totalMessages').set(firebase.database.ServerValue.increment(1)); }
-  catch(_){ /* تحسين إضافي فقط — مايوقفش إرسال الرسالة لو فشل */ }
+  catch(_){   }
 }
 function logAdminAction(action, details){
   try{
@@ -1646,7 +1520,7 @@ function logAdminAction(action, details){
       action, details: details||null,
       byUid: state.user.uid, byName: state.profile?.name||'', ts: firebase.database.ServerValue.TIMESTAMP
     });
-  }catch(_){ /* السجل تحسين إضافي — مايوقفش أي عملية أساسية لو فشل الكتابة له */ }
+  }catch(_){   }
 }
 function tplAdminDashboard(){
   return `<div id="statsArea" class="stats-grid"><div class="stat-box"><b>…</b><span>جارِ التحميل</span></div></div>
@@ -1670,8 +1544,7 @@ function showLoadError(containerId, e){
   if(el) el.innerHTML = `<div class="empty-state"><span class="emoji">⚠️</span>تعذر تحميل البيانات<br><span style="font-size:11px;direction:ltr;display:inline-block;margin-top:6px">${esc(e && e.message || e)}</span></div>`;
   console.error(e);
 }
-// بترجع { snap } لو نجحت القراءة، أو { error: 'اسم المسار: رسالة الخطأ' } لو اترفضت —
-// عشان لو حصل Permission Denied، نعرف بالظبط أي مسار هو من غير ما نحتاج نفتح Console
+
 async function safeGet(path, ref){
   try{ return { snap: await ref.get() }; }
   catch(e){ return { error: path+': '+(e && e.message || e) }; }
@@ -1710,11 +1583,6 @@ async function loadAdminStats(){
   const codes = codesSnap.val()||{};
   const activeKeys = Object.values(codes).filter(c=>c.status==='active' && !c.deviceId).length;
 
-  // عدد الرسائل الإجمالي — بنقرأ عداد خفيف (stats/totalMessages) بدل ما نجيب شجرة
-  // chatThreads كاملة في كل مرة تُفتح فيها لوحة التحكم (ده كان بيكلّف قراءات Firebase
-  // كتير أوي مع نمو عدد المحادثات). العداد بيتحدّث تلقائيًا مع كل رسالة جديدة (sendChatMessage/
-  // uploadChatFile/forwardMessageTo)، ولو العداد لسه معمول (نشر أول مرة)، بنعمل الفحص
-  // الكامل مرة واحدة بس ونهيّئ العداد بيها، وبعد كده كل تحميل للوحة هيبقى رخيص جدًا.
   let messagesCount = 0;
   try{
     const counterSnap = await db.ref('stats/totalMessages').get();
@@ -1724,9 +1592,9 @@ async function loadAdminStats(){
       const chatsSnap = await db.ref('chatThreads').get();
       const chats = chatsSnap.val()||{};
       Object.values(chats).forEach(t=>{ messagesCount += Object.keys(t.messages||{}).length; });
-      db.ref('stats/totalMessages').set(messagesCount); // تهيئة العداد مرة واحدة فقط
+      db.ref('stats/totalMessages').set(messagesCount);
     }
-  }catch(_){ /* لو مفيش صلاحية قراءة، نسيب العداد صفر بدل ما نكسر باقي اللوحة */ }
+  }catch(_){   }
 
   $('#statsArea').innerHTML = `
     <div class="stat-box"><b>${onlineCount}</b><span>متصلين الآن</span></div>
@@ -1740,7 +1608,6 @@ async function loadAdminStats(){
     <div class="stat-box"><b>${Object.keys(calls).length}</b><span>مكالمات</span></div>
     <div class="stat-box"><b>${totalOwed.toLocaleString('ar-EG')}</b><span>إجمالي مستحقات المعلمات (ج.م)</span></div>`;
 
-  // أحدث التسجيلات
   const recent = [...userEntries].sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0)).slice(0,5);
   $('#recentRegs').innerHTML = recent.length ? recent.map(([id,u])=>`
     <div class="list-item"><div class="avatar">${initials(u.name)}</div>
@@ -1748,7 +1615,6 @@ async function loadAdminStats(){
       <div class="li-meta"><span style="font-size:11px">${fmtDate(u.createdAt)}</span></div>
     </div>`).join('') : '<div class="empty-state">لا يوجد مستخدمين</div>';
 
-  // أكثر الطلاب نشاطاً (حسب نسبة الإنجاز كمؤشر تقدّم/نشاط)
   const topStu = userEntries.filter(([,u])=>u.role==='student')
     .map(([id,u])=>({id,u,pct:(progress[id]&&progress[id].totalPercent)||0}))
     .sort((a,b)=>b.pct-a.pct).slice(0,5);
@@ -1760,7 +1626,6 @@ async function loadAdminStats(){
       <div class="li-meta"><span style="font-size:11px">${pct}%</span></div>
     </div>`).join('') : '<div class="empty-state">لا يوجد طلاب بعد</div>';
 
-  // أكثر المعلمات نشاطاً (حسب عدد الطلاب المخصصين كمؤشر حِمل العمل) + متوسط تقييمها
   const topTea = userEntries.filter(([,u])=>u.role==='teacher')
     .map(([id,u])=>({id,u,count:Object.keys(assignments[id]||{}).length, rs: ratingsSummary[id]||{}}))
     .sort((a,b)=>b.count-a.count).slice(0,5);
@@ -1770,7 +1635,6 @@ async function loadAdminStats(){
       <div class="li-meta"><span class="chip ${presence[id]&&presence[id].online?'ok':'neutral'}">${presence[id]&&presence[id].online?'متصلة':'غير متصلة'}</span></div>
     </div>`).join('') : '<div class="empty-state">لا توجد معلمات بعد</div>';
 
-  // صحة الاشتراكات: منتهية + قريبة الانتهاء (خلال 3 أيام)، بالاعتماد على subscription.expiresAt
   const soonMs = 3*24*60*60*1000;
   const nowTs = Date.now();
   const expiredList = userEntries.filter(([,u])=>u.status==='expired');
@@ -1793,10 +1657,9 @@ async function loadAdminStats(){
 
   renderUsersChart({teachers, students, admins, activeSubs, expiredSubs});
 
-  // سجل العمليات الأخيرة (توليد/حذف مفاتيح، تغيير أدوار، حذف حسابات)
   db.ref('adminAuditLog').limitToLast(15).get().then(snap=>{
     const logs = Object.entries(snap.val()||{}).reverse();
-    const labels = { generate_key:'🔑 توليد مفتاح', delete_keys:'🗑️ حذف مفاتيح', change_role:'🔄 تغيير دور', delete_user:'🗑️ حذف حساب', teacher_finance:'💰 تعديل رصيد معلمة' };
+    const labels = { generate_key:'🔑 توليد مفتاح', delete_keys:'🗑️ حذف مفاتيح', change_role:'🔄 تغيير دور', delete_user:'🗑️ حذف حساب', teacher_finance:'💰 تعديل رصيد معلمة', teacher_finance_zero:'🧾 تصفير رصيد معلمة', delete_message:'🗑️ حذف رسالة شات' };
     $('#adminAuditPreview').innerHTML = logs.length ? logs.map(([id,l])=>`
       <div class="list-item"><div class="li-body"><b>${labels[l.action]||l.action}</b><span>${esc(l.details||'')} · بواسطة ${esc(l.byName||'')} · ${fmtDate(l.ts)} ${fmtTime(l.ts)}</span></div></div>`).join('')
       : '<div class="empty-state">لا توجد عمليات مسجّلة بعد</div>';
@@ -1806,7 +1669,7 @@ async function loadAdminStats(){
 let _usersChartInstance = null;
 function renderUsersChart({teachers, students, admins, activeSubs, expiredSubs}){
   const canvas = $('#usersChart');
-  if(!canvas || typeof Chart==='undefined') return; // لو مكتبة الرسم البياني متعطلة لأي سبب، الداشبورد يفضل شغال من غيرها
+  if(!canvas || typeof Chart==='undefined') return;
   if(_usersChartInstance){ _usersChartInstance.destroy(); }
   _usersChartInstance = new Chart(canvas, {
     type:'doughnut',
@@ -2130,7 +1993,7 @@ async function loadAdminUsers(){
   }catch(e){ showLoadError('usersList', e); }
 }
 function exportUsersCSV(users){
-  // بيصدّر المستخدمين اللي ظاهرين حاليًا (بعد أي فلترة/بحث مطبّق) — نفس منطق تصدير المفاتيح
+
   let entries = Object.entries(users);
   if(usersFilter==='teacher') entries = entries.filter(([,u])=>u.role==='teacher');
   else if(usersFilter==='student') entries = entries.filter(([,u])=>u.role==='student');
@@ -2209,7 +2072,7 @@ function renderUsersList(users){
   $all('[data-forcelogout]').forEach(b=>b.addEventListener('click', ()=>forceLogoutUser(b.dataset.forcelogout)));
   $all('[data-deleteuser]').forEach(b=>b.addEventListener('click', ()=>deleteUserCompletely(b.dataset.deleteuser, users[b.dataset.deleteuser])));
 }
-// تحويل دور المستخدم — بيفك أي ربط طالب/معلمة قديم تلقائيًا عشان منسيبش بيانات معلّقة
+
 async function changeUserRole(uid, u){
   if(!u) return;
   const newRole = u.role==='teacher' ? 'student' : 'teacher';
@@ -2236,10 +2099,7 @@ async function changeUserRole(uid, u){
     await loadAdminUsers();
   }catch(e){ toast('تعذر تحويل الدور: '+(e.message||'')); }
 }
-// إدارة رصيد/مستحقات المعلمة — الأدمن يقدر يشوف الرصيد الحالي وآخر الحركات، ويضيف
-// أو يخصم مبلغ مع سبب اختياري. كل حركة بتتسجل في finance/{teacherUid}/transactions
-// كسجل ثابت (append-only)، والرصيد الحالي بيتحدّث كمجموع بـ increment (عملية ذرّية
-// من فايربيس، فمينفعش حركتين يحصل بينهم تعارض حتى لو حصلوا في نفس اللحظة بالظبط).
+
 function openTeacherFinanceModal(teacherUid, teacherName){
   showModal(`
     <h3>رصيد ${esc(teacherName)}</h3>
@@ -2253,6 +2113,7 @@ function openTeacherFinanceModal(teacherUid, teacherName){
       <button class="btn" id="btnFinanceAdd" style="flex:1">➕ إضافة</button>
       <button class="btn danger" id="btnFinanceDeduct" style="flex:1">➖ خصم</button>
     </div>
+    <button class="btn ghost" id="btnFinanceZero" style="margin-top:8px">🧾 تصفير الرصيد بالكامل (بعد الصرف نقدًا)</button>
     <div class="section-title" style="margin-top:16px">آخر الحركات</div>
     <div id="financeTxList"><div class="empty-state">جارِ التحميل...</div></div>`);
 
@@ -2291,14 +2152,39 @@ function openTeacherFinanceModal(teacherUid, teacherName){
       $('#financeAmount').value=''; $('#financeNote').value='';
       toast(sign>0?'تم إضافة المبلغ':'تم خصم المبلغ');
       await refreshFinanceModal();
-      loadAdminUsers(); // تحديث الشريحة (chip) في القائمة الخلفية بعد قفل الـ modal
+      loadAdminUsers();
     }catch(e){ toast('تعذر تنفيذ العملية: '+(e.message||'')); }
     finally{ if(btnAdd) btnAdd.disabled=false; if(btnDed) btnDed.disabled=false; }
   }
   $('#btnFinanceAdd').addEventListener('click', ()=>applyFinanceDelta(1));
   $('#btnFinanceDeduct').addEventListener('click', ()=>applyFinanceDelta(-1));
+
+  async function zeroOutFinanceBalance(){
+    const btnZero = $('#btnFinanceZero');
+    const snap = await finRef.child('balance').get();
+    const currentBal = snap.val()||0;
+    if(currentBal===0){ toast('الرصيد صفر بالفعل'); return; }
+    if(!confirm(`سيتم تصفير رصيد ${teacherName} بالكامل إلى 0 ج.م (الرصيد الحالي: ${currentBal.toLocaleString('ar-EG')} ج.م). استخدم هذا فقط بعد صرف المستحقات نقدًا لها. لا يمكن التراجع تلقائيًا عن هذا الإجراء. متابعة؟`)) return;
+    if(btnZero) btnZero.disabled = true;
+    try{
+      let deltaForLog = 0;
+      await finRef.child('balance').transaction(cur=>{ deltaForLog = -(cur||0); return 0; });
+      if(deltaForLog!==0){
+        await finRef.child('transactions').push({
+          amount: deltaForLog, note: 'تصفير الرصيد — تم الصرف نقدًا', byUid: state.user.uid, byName: state.profile?.name||'', ts: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
+      await finRef.update({ updatedAt: firebase.database.ServerValue.TIMESTAMP });
+      logAdminAction('teacher_finance_zero', `تصفير رصيد ${teacherName} (كان ${currentBal.toLocaleString('ar-EG')} ج.م) بعد الصرف نقدًا`);
+      toast('تم تصفير الرصيد بنجاح');
+      await refreshFinanceModal();
+      loadAdminUsers();
+    }catch(e){ toast('تعذر تصفير الرصيد: '+(e.message||'')); }
+    finally{ if(btnZero) btnZero.disabled=false; }
+  }
+  $('#btnFinanceZero').addEventListener('click', zeroOutFinanceBalance);
 }
-// نقل طالب لمعلمة أخرى (بديل سريع لتبويب "الربط" الكامل، من نفس شاشة المستخدمين)
+
 function openReassignTeacherModal(studentUid, student){
   if(!student) return;
   db.ref('users').get().then(snap=>{
@@ -2333,31 +2219,20 @@ function openReassignTeacherModal(studentUid, student){
     });
   });
 }
-// إعادة تعيين كلمة المرور: بيرسل رابط Firebase القياسي لبريد الحساب الداخلي (username@rawasekh.app).
-// ملاحظة مهمة: طالما الحسابات بتستخدم بريد داخلي وهمي (مش بريد حقيقي للمستخدم)، الرابط ده
-// هيتبعت لصندوق بريد مالوش صاحب فعليًا. تفعيل إعادة تعيين حقيقية للمستخدم يحتاج إما بريد
-// استرجاع حقيقي مخزّن في الملف الشخصي، أو Cloud Function بصلاحيات Admin SDK لتغيير كلمة
-// المرور مباشرة (التطبيق ده ملف واحد بدون سيرفر فمفيش وصول لـ Admin SDK من هنا).
+
 async function resetUserPassword(u){
   if(!u || !u.username){ toast('لا يوجد اسم مستخدم لهذا الحساب'); return; }
   if(!confirm('سيتم إرسال رابط إعادة تعيين كلمة المرور القياسي من Firebase. تنبيه: الحسابات هنا تستخدم بريدًا داخليًا وهميًا، فهذا الرابط لن يصل لصندوق بريد حقيقي للمستخدم إلا لو تم ربط بريد استرجاع حقيقي لاحقًا. متابعة؟')) return;
   try{ await auth.sendPasswordResetEmail(usernameToEmail(u.username)); toast('تم إرسال طلب إعادة التعيين لبريد الحساب الداخلي'); }
   catch(e){ toast('تعذر الإرسال: '+(e.message||'')); }
 }
-// إجبار تسجيل الخروج: بيسجّل وقت الأمر في users/{uid}/forceLogoutAt، والمستمع الدائم على
-// بروفايل المستخدم (auth.onAuthStateChanged) بيقارنه بلحظة بداية جلسته الحالية ويسجّل خروجه
-// فورًا لو الأمر أحدث من دخوله — بيشتغل بمجرد ما يوصل التحديث Realtime، من غير أي تحديث يدوي للصفحة.
+
 async function forceLogoutUser(uid){
   if(!confirm('إجبار هذا المستخدم على تسجيل الخروج الآن؟')) return;
   try{ await db.ref('users/'+uid).update({forceLogoutAt: firebase.database.ServerValue.TIMESTAMP}); toast('تم إرسال أمر تسجيل الخروج'); }
   catch(e){ toast('تعذر التنفيذ: '+(e.message||'')); }
 }
-// حذف مستخدم بالكامل: البروفايل، اسم المستخدم المحجوز، الحضور، التقدم، روابط التدريس/المتابعة،
-// محادثاته ومكالماته مع الطرف المرتبط به (ملفات الشات المرفوعة كمان تتحذف من Storage قبل حذف الثريد).
-// ملاحظة مهمة: العميل (Client SDK) مينفعش يحذف حساب مستخدم *تاني* من Firebase Authentication —
-// ده متاح بس للمستخدم يحذف حساب نفسه، أو عبر Admin SDK من سيرفر/Cloud Function. الحذف هنا بيمسح
-// كل بيانات الحساب فعليًا ويمنعه نهائيًا من الوصول لأي شيء في التطبيق، لكن سجل الدخول (Email/Password)
-// هيفضل موجود في Firebase Authentication نفسه حتى تضيفوا Cloud Function لحذفه من هناك كمان.
+
 async function deleteUserCompletely(uid, u){
   if(!u) return;
   if(!confirm(`سيتم حذف حساب "${u.name}" وكل بياناته (محادثات، مكالمات، ${u.role==='teacher'?'روابط طلابه':'تقدمه وربطه بمعلمته'}) نهائيًا. لا يمكن التراجع.\n\nملاحظة: هذا لا يحذف الحساب من Firebase Authentication نفسه (يتطلب Cloud Function من السيرفر)، لكنه سيُقفل نهائيًا وتُمسح كل بياناته.\n\nمتابعة؟`)) return;
@@ -2374,8 +2249,8 @@ async function deleteUserCompletely(uid, u){
       const myStudents = Object.keys(aSnap.val()||{});
       peers = myStudents;
       updates['assignments/'+uid] = null;
-      updates['schedules/'+uid] = null; // جدول حلقات المعلمة بالكامل
-      updates['finance/'+uid] = null; // ملاحظة: بيمسح سجل الرصيد والحركات كمان — لو محتاجين نحتفظ بالسجل المالي للأرشيف حتى بعد حذف الحساب، شيلوا السطر ده
+      updates['schedules/'+uid] = null;
+      updates['finance/'+uid] = null;
       for(const sid of myStudents){
         const stSnap = await db.ref('studentTeacher/'+sid).get();
         if(stSnap.val()===uid) updates['studentTeacher/'+sid] = null;
@@ -2394,11 +2269,7 @@ async function deleteUserCompletely(uid, u){
         const msgs = msgsSnap.val()||{};
         await Promise.all(Object.values(msgs).map(async m=>{
           if((m.type==='image'||m.type==='file') && m.url){
-            // بقينا بنستخدم Cloudinary مش Firebase Storage، وحذف ملف من Cloudinary محتاج
-            // طلب "موقّع" بمفتاح سري (API Secret) — ده مينفعش يتعمل من المتصفح بأمان
-            // (أي حد كان هيقدر يشوفه ويحذف ملفات غيره). فبنسيب ملف الميديا نفسه
-            // زي ما هو على Cloudinary (مش هيتحسب عليك فلوس، بس هياخد مساحة من الكوتة
-            // المجانية)، وبنكتفي بمسح الرسالة والداتا من قاعدة البيانات بس.
+
           }
         }));
       }catch(_){}
@@ -2442,7 +2313,7 @@ async function loadAdminAssign(){
     chk.disabled = true;
     try{
       if(chk.checked){
-        // كل طالب مربوط بمعلمة واحدة بس، فلو كان مربوط بمعلمة تانية نفصله منها الأول
+
         const curSnap = await db.ref(`studentTeacher/${s}`).get();
         const prevT = curSnap.val();
         if(prevT && prevT!==t){
@@ -2451,7 +2322,7 @@ async function loadAdminAssign(){
           if(prevChk) prevChk.checked = false;
         }
         await db.ref(`assignments/${t}/${s}`).set(true);
-        await db.ref(`studentTeacher/${s}`).set(t); // فهرس عكسي: الطالب يقرأ سطر واحد بس مش كل شجرة assignments
+        await db.ref(`studentTeacher/${s}`).set(t);
       } else {
         await db.ref(`assignments/${t}/${s}`).remove();
         const cur = await db.ref(`studentTeacher/${s}`).get();
@@ -2484,18 +2355,11 @@ async function loadAdminReports(){
   }catch(e){ showLoadError('reportsList', e); showLoadError('secAlertsList', e); }
 }
 
-/* =====[ SECTION: ADMIN — مراجعة كل المحادثات ]=====
-   ميزة جديدة: الأدمن يقدر يشوف أي محادثة بين معلمة وطالب/ة كاملة، وحتى لو
-   الطرفين حذفوا رسائل بينهم (عندهم فقط أو لدى الجميع)، المحتوى الأصلي بيفضل
-   ظاهر بالكامل عند الأدمن هنا — الحذف بتاع الطرفين شكل واجهة بس عندهم، ومحصلش
-   فعليًا مسح للمحتوى من قاعدة البيانات (أنظر deleteMessage). */
 function tplAdminChats(){
   return `<div class="field"><input id="adminChatsSearch" placeholder="بحث بالاسم..."></div>
   <div id="adminChatsList"><div class="empty-state">جارِ التحميل...</div></div>`;
 }
-// chatId عبارة عن pairId(uidA,uidB) = [a,b].sort().join('_')؛ عشان نستخرج
-// الاتنين تاني من غير أي افتراض عن شكل الـ uid، بنجرب كل uid معروف من users/
-// كبداية محتملة للـ chatId ونتحقق إن pairId بتاعه بيطابق الـ chatId فعليًا.
+
 function findParticipantsForChatId(chatId, knownUids){
   for(const uid of knownUids){
     if(chatId.startsWith(uid+'_')){
@@ -2518,7 +2382,7 @@ async function loadAdminChats(){
       const participants = findParticipantsForChatId(chatId, knownUids);
       const nameA = participants ? (users[participants[0]]?.name || 'مستخدم محذوف') : 'غير معروف';
       const nameB = participants ? (users[participants[1]]?.name || 'مستخدم محذوف') : 'غير معروف';
-      // خريطة uid → اسم، عشان نقدر نبيّن جنب كل رسالة هي مبعوتة من مين بالظبط
+
       const namesMap = participants ? { [participants[0]]: nameA, [participants[1]]: nameB } : {};
       return { chatId, nameA, nameB, count: msgs.length, lastTs: lastMsg ? (lastMsg.ts||0) : 0, namesMap };
     }).sort((a,b)=> b.lastTs - a.lastTs);
@@ -2546,9 +2410,10 @@ function renderAdminChatsList(rows){
     });
   });
 }
-let adminChatViewRef = null, adminChatViewCb = null, adminChatNamesMap = {};
+let adminChatViewRef = null, adminChatViewCb = null, adminChatNamesMap = {}, adminChatCurrentId = null;
 function openAdminChatView(chatId, title, namesMap){
   adminChatNamesMap = namesMap || {};
+  adminChatCurrentId = chatId;
   $('#adminChatTitle').textContent = title;
   $('#adminChatBody').innerHTML = '<div class="bubble system">جارِ تحميل المحادثة...</div>';
   $('#adminChatOverlay').classList.add('active');
@@ -2560,60 +2425,75 @@ function openAdminChatView(chatId, title, namesMap){
     const body = $('#adminChatBody');
     if(!body) return;
     const entries = Object.entries(msgs).sort((a,b)=>(a[1].ts||0)-(b[1].ts||0));
-    body.innerHTML = entries.map(([id,m])=> renderAdminChatBubble(m, adminChatNamesMap)).join('') || `<div class="bubble system">لا توجد رسائل في هذه المحادثة</div>`;
+    body.innerHTML = entries.map(([id,m])=> renderAdminChatBubble(id, m, adminChatNamesMap)).join('') || `<div class="bubble system">لا توجد رسائل في هذه المحادثة</div>`;
     body.scrollTop = body.scrollHeight;
   };
   adminChatViewRef.on('value', adminChatViewCb);
 }
 function closeAdminChatView(fromBack){
   if(adminChatViewRef){ adminChatViewRef.off('value', adminChatViewCb); adminChatViewRef=null; adminChatViewCb=null; }
+  adminChatCurrentId = null;
   $('#adminChatOverlay').classList.remove('active');
   if(!fromBack) popNavIfMatches('adminChatView');
 }
-// نسخة عرض فقط، من غير أي إمكانية حذف/رد، وبتوضّح حالة الحذف بدل ما تخفي المحتوى
-function renderAdminChatBubble(m, namesMap){
+async function adminDeleteMessage(msgId){
+  if(!adminChatCurrentId || !msgId) return;
+  if(!confirm('سيتم حذف هذه الرسالة نهائيًا من عند الطرفين ولن يمكن التراجع عن هذا الإجراء. متابعة؟')) return;
+  try{
+    await db.ref('chatThreads/'+adminChatCurrentId+'/messages/'+msgId).remove();
+    logAdminAction('delete_message', 'حذف رسالة من محادثة عبر عارض الأدمن');
+    toast('تم حذف الرسالة نهائيًا');
+  }catch(e){ toast('تعذر حذف الرسالة: '+(e.message||'')); }
+}
+document.addEventListener('click', e=>{
+  const delBtn = e.target.closest('.admin-msg-del-btn');
+  if(!delBtn) return;
+  adminDeleteMessage(delBtn.dataset.adminDelId);
+});
+
+function renderAdminChatBubble(id, m, namesMap){
   const deletedTag = m.deleted ? `<div class="admin-del-tag">🗑️ حذفها المرسل لدى الجميع — ظاهرة هنا للأدمن بس</div>` : '';
   const hiddenForTag = (m.deletedFor && Object.keys(m.deletedFor).length) ? `<div class="admin-del-tag">🙈 حذفها أحد الطرفين عنده فقط — ظاهرة هنا للأدمن بس</div>` : '';
-  // اسم المرسل الحقيقي (مش "them" ثابتة)، عشان الأدمن يعرف كل رسالة مبعوتة من مين بالظبط
+
   const senderName = (namesMap && namesMap[m.senderUid]) || 'مستخدم غير معروف';
   const senderTag = `<div class="admin-sender-tag">✍️ ${esc(senderName)}</div>`;
+  const delBtn = `<button class="admin-msg-del-btn" data-admin-del-id="${esc(id)}" title="حذف الرسالة نهائيًا">🗑️</button>`;
   if(m.type==='image'){
-    return `<div class="bubble media them">
-      ${senderTag}
+    return `<div class="bubble media them" data-msg-id="${esc(id)}">
+      ${delBtn}${senderTag}
       <div class="chat-img-wrap"><img class="chat-img" src="${esc(m.url||'')}" loading="lazy"><div class="meta">${fmtTime(m.ts)}</div></div>
       ${deletedTag}${hiddenForTag}
     </div>`;
   }
   if(m.type==='audio'){
     const dur = m.duration ? (String(Math.floor(m.duration/60)).padStart(2,'0')+':'+String(m.duration%60).padStart(2,'0')) : '';
-    return `<div class="bubble audio-bubble them">
-      ${senderTag}
+    return `<div class="bubble audio-bubble them" data-msg-id="${esc(id)}">
+      ${delBtn}${senderTag}
       🎤 <audio controls preload="none" src="${esc(m.url||'')}"></audio>
       <div class="meta">${dur?dur+' · ':''}${fmtTime(m.ts)}</div>
       ${deletedTag}${hiddenForTag}
     </div>`;
   }
   if(m.type==='file'){
-    return `<div class="bubble file-bubble them">
-      ${senderTag}
+    return `<div class="bubble file-bubble them" data-msg-id="${esc(id)}">
+      ${delBtn}${senderTag}
       <div class="file-ic">📄</div>
       <div class="file-info"><b>${esc(m.fileName||'ملف')}</b><span>${fmtBytes(m.fileSize||0)}</span></div>
       ${deletedTag}${hiddenForTag}
     </div>`;
   }
   if(m.type==='call_invite'){
-    return `<div class="bubble call-invite-bubble them">
-      ${senderTag}
+    return `<div class="bubble call-invite-bubble them" data-msg-id="${esc(id)}">
+      ${delBtn}${senderTag}
       <div class="call-invite-ic">📞</div>
       <div class="call-invite-text"><b>مكالمة صوتية</b><span>${esc(m.text||'تمت دعوتك إلى مكالمة صوتية.')}</span></div>
       <div class="meta">${fmtTime(m.ts)}</div>
       ${deletedTag}${hiddenForTag}
     </div>`;
   }
-  return `<div class="bubble them">${senderTag}${esc(m.text||'')}<div class="meta">${fmtTime(m.ts)}</div>${deletedTag}${hiddenForTag}</div>`;
+  return `<div class="bubble them" data-msg-id="${esc(id)}">${delBtn}${senderTag}${esc(m.text||'')}<div class="meta">${fmtTime(m.ts)}</div>${deletedTag}${hiddenForTag}</div>`;
 }
 
-/* =====[ SECTION: ADMIN — الإعدادات (وضع الصيانة + الإشعارات) ]===== */
 function tplAdminSettings(){
   return `
   <div class="section-title">وضع الصيانة 🛠️</div>
@@ -2647,7 +2527,7 @@ function tplAdminSettings(){
   </div>`;
 }
 async function bindAdminSettingsEvents(){
-  // حالة الصيانة الحالية
+
   try{
     const snap = await db.ref('siteConfig/maintenance').get();
     const m = snap.val() || {enabled:false, message:''};
@@ -2656,7 +2536,7 @@ async function bindAdminSettingsEvents(){
       ? `<span class="chip danger">مفعّل حاليًا ⚠️</span> — كل المستخدمين (عدا الأدمن) بيشوفوا شاشة الصيانة`
       : `<span class="chip ok">غير مفعّل</span> — المنصة شغالة بشكل طبيعي`;
     if($('#maintMsgInput')) $('#maintMsgInput').value = m.message || '';
-  }catch(e){ /* تجاهل، الأزرار هتفضل شغالة برضو */ }
+  }catch(e){   }
 
   $('#btnEnableMaint')?.addEventListener('click', async ()=>{
     const msg = $('#maintMsgInput').value.trim();
@@ -2708,9 +2588,8 @@ async function bindAdminSettingsEvents(){
   });
 }
 
-/* =====[ SECTION: TEACHER PANEL ]===== */
-let teacherView = 'students'; // students | profile | settings
-let teacherActiveStudent = null; // {uid, name}
+let teacherView = 'students';
+let teacherActiveStudent = null;
 function screenTeacherShell(){
   return `
   <div class="screen active">
@@ -2790,7 +2669,7 @@ async function loadTeacherStudents(){
   const assignSnap = await db.ref('assignments/'+myUid).get();
   const myStudentIds = Object.keys(assignSnap.val()||{});
   if(!myStudentIds.length){ $('#myStudentsList').innerHTML = '<div class="empty-state"><span class="emoji">🌙</span>لا يوجد طلاب مخصصين لك بعد</div>'; return; }
-  // نجيب بس بيانات الطلاب المخصصين لينا (مش شجرة /users أو /presence أو /progress كاملة)
+
   const perStudent = await Promise.all(myStudentIds.map(sid=>Promise.all([
     db.ref('users/'+sid).get(), db.ref('presence/'+sid).get(), db.ref('progress/'+sid).get()
   ])));
@@ -2874,12 +2753,7 @@ async function loadTeacherStudentProfile(){
   $('#btnEditSchedule')?.addEventListener('click', ()=>openScheduleModal(sid, teacherActiveStudent.name));
 }
 const WEEKDAY_NAMES_AR = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-// عيب قديم (مُصلَح): كان مسموح بميعاد واحد بس لكل طالب (يوم + ساعة واحدة)، فمعلمة
-// عندها أكتر من حلقة أسبوعيًا مع نفس الطالب (مثلاً 3 أيام في الأسبوع) مكانش
-// بيتسجّلش. دلوقتي كل طالب ممكن يكون ليه أي عدد من المواعيد (sessions/{id}:{day,time})
-// بدل ميعاد واحد ثابت. بنفضل نقرأ الصيغة القديمة (day/time مباشرة) للتوافق مع
-// أي بيانات قديمة موجودة فعلاً في القاعدة، وأول ما المعلمة تضيف ميعاد جديد
-// بنرحّل القديم تلقائيًا لجوه sessions/ بدل ما يضيع.
+
 function getStudentSessions(sc){
   if(!sc) return [];
   const out = [];
@@ -2920,7 +2794,7 @@ function renderScheduleModal(sid, name, sc, isInitial){
     try{
       const base = 'schedules/'+state.user.uid+'/'+sid;
       const updates = {}; updates[base+'/studentName'] = name;
-      // ترحيل الميعاد القديم (لو موجود بالصيغة القديمة ولسه ماترحّلش) قبل إضافة أي ميعاد جديد
+
       if(sc.day!=null && sc.time && !sc.sessions){
         const legacyKey = db.ref(base+'/sessions').push().key;
         updates[base+'/sessions/'+legacyKey] = { day: sc.day, time: sc.time };
@@ -2985,8 +2859,7 @@ function openDailyLogModal(){
   });
 }
 
-/* =====[ SECTION: مواقيت الصلاة + الأذكار — إضافة تميّز المنصة كمنصة علم شرعي ]===== */
-const PRAYER_METHOD = 5; // الهيئة المصرية العامة للمساحة
+const PRAYER_METHOD = 5;
 const PRAYER_NAMES_AR = { Fajr:'الفجر', Dhuhr:'الظهر', Asr:'العصر', Maghrib:'المغرب', Isha:'العشاء' };
 const PRAYER_ORDER = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
 function todayKeyDDMMYYYY(){
@@ -2995,7 +2868,7 @@ function todayKeyDDMMYYYY(){
 }
 function getUserCoords(){
   return new Promise(resolve=>{
-    if(!navigator.geolocation){ resolve({lat:30.0444, lng:31.2357}); return; } // القاهرة كموقع افتراضي لو تعذر تحديد الموقع
+    if(!navigator.geolocation){ resolve({lat:30.0444, lng:31.2357}); return; }
     navigator.geolocation.getCurrentPosition(
       pos=> resolve({lat:pos.coords.latitude, lng:pos.coords.longitude}),
       ()=> resolve({lat:30.0444, lng:31.2357}),
@@ -3025,7 +2898,7 @@ function computeNextPrayer(timings){
     const mins = h*60+m;
     if(mins > nowMin && mins < nextMin){ nextMin = mins; next = k; }
   });
-  if(!next){ // كل صلوات اليوم عدّت — القادمة فجر بكرة
+  if(!next){
     const [h,m] = (timings.Fajr||'0:0').split(':').map(Number);
     next = 'Fajr'; nextMin = h*60+m+24*60;
   }
@@ -3058,7 +2931,7 @@ async function loadPrayerWidget(){
     if(box) box.innerHTML = `<div class="prayer-widget-top"><div class="prayer-widget-next"><b>تعذر تحميل المواقيت</b><span>تأكد من الاتصال بالإنترنت</span></div></div>`;
   }
 }
-// أذكار الصباح والمساء — نصوص تراثية إسلامية موثقة من كتب الأذكار المعروفة (حصن المسلم)
+
 const ADHKAR_MORNING = [
   {t:'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ', c:1},
   {t:'اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ', c:1},
@@ -3112,7 +2985,7 @@ function bindAdhkarItemEvents(){
     });
   });
 }
-// تتابع أيام الحفظ (Streak) — بيتحسب من عدد الأيام المتتالية اللي فيها سجل إنجاز
+
 function computeStreak(logsObj){
   const days = new Set();
   Object.values(logsObj||{}).forEach(l=>{ if(l.ts){ const d=new Date(l.ts); days.add(d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()); } });
@@ -3124,8 +2997,7 @@ function computeStreak(logsObj){
   return streak;
 }
 
-/* =====[ SECTION: STUDENT PANEL ]===== */
-let studentView = 'home'; // home | settings
+let studentView = 'home';
 let myTeacherCache = null;
 function screenStudentShell(){
   return `
@@ -3159,18 +3031,13 @@ function bindStudentViewEvents(){
 function tplStudentHome(){
   return `<div id="studentHomeArea"><div class="empty-state">جارِ التحميل...</div></div>`;
 }
-// عيب #11 (مُصلَح): الكاش القديم كان "if(myTeacherCache) return" — أي لما
-// يُحدَّد مرة يفضل محفوظ طول الجلسة بدون تحديث، وده سبب مشكلتين: (1) لو
-// الأدمن غيّر معلمة الطالب وهو فاتح التطبيق، الصفحة كانت تفضل تجيب المعلمة
-// القديمة. (2) كان بيتسرب بين الحسابات المختلفة في نفس المتصفح. دلوقتي
-// بنجيب القيمة بشكل مباشر من فايربيس في كل مرة (قراءة واحدة خفيفة)،
-// والتحديث اللحظي الحقيقي بقى مسؤولية watchMyTeacher() تحت.
+
 async function findMyTeacher(){
   const snap = await db.ref('studentTeacher/'+state.user.uid).get();
   myTeacherCache = snap.val() || null;
   return myTeacherCache;
 }
-// بيرجّع HTML صغير لعرض متوسط النجوم + عدد التقييمات، أو نص "لسه معملتش تقييمات"
+
 function starsAvgHtml(sum, count){
   if(!count) return `<span style="font-size:12px;color:var(--text-dim)">لا توجد تقييمات بعد</span>`;
   const avg = sum/count;
@@ -3232,20 +3099,17 @@ function openRatingModal(teacherUid){
   $('#btnSubmitRating').addEventListener('click', async ()=>{
     if(!stars){ toast('اختر عدد النجوم'); return; }
     await db.ref('ratings/'+teacherUid+'/'+state.user.uid).push({ stars, note: $('#rateNote').value.trim()||null, ts: firebase.database.ServerValue.TIMESTAMP });
-    // تحديث متوسط التقييم الإجمالي للمعلمة (sum/count) بعملية transaction ذرّية —
-    // بدل ما كل حد يحسب المتوسط بنفسه من قراءة شجرة ratings كاملة (اللي أصلاً محدش
-    // غير الأدمن أو المعلمة نفسها يقدر يقراها)، بنخزن رقمين خفيفين أي حد يقدر يقراهم.
+
     try{
       await db.ref('ratingsSummary/'+teacherUid).transaction(cur=>{
         const c = cur || {sum:0, count:0};
         return { sum: (c.sum||0) + stars, count: (c.count||0) + 1 };
       });
-    }catch(_){ /* المتوسط تحسين عرض إضافي فقط — مايوقفش تسجيل التقييم الأساسي لو فشل */ }
+    }catch(_){   }
     hideModal(); toast('شكرًا لتقييمك ⭐');
   });
 }
 
-/* =====[ SECTION: SETTINGS (مشترك) ]===== */
 function tplSettings(){
   const isTeacher = state.profile.role==='teacher';
   return `
@@ -3279,7 +3143,7 @@ function bindSettingsEvents(){
     try{ await state.user.updatePassword(np); toast('تم تحديث كلمة المرور'); $('#newPass').value=''; }
     catch(e){ toast('أعد تسجيل الدخول ثم حاول مرة أخرى'); }
   });
-  // المعلمة تقدر تشوف رصيدها الحالي ومتوسط تقييمها بس (بدون تعديل — التعديل للأدمن فقط)
+
   if(state.profile.role==='teacher'){
     const uid = state.user.uid;
     Promise.all([db.ref('finance/'+uid).get(), db.ref('ratingsSummary/'+uid).get()]).then(([finSnap, rateSnap])=>{
@@ -3298,10 +3162,9 @@ function bindSettingsEvents(){
   }
 }
 
-/* =====[ SECTION: CHAT SYSTEM ]===== */
 function openChat(otherUid, otherName){
   state.chatWith = {uid: otherUid, name: otherName};
-  saveChatWith(state.chatWith); // نحفظها عشان لو المستخدم عمل Refresh يرجع لنفس الشات
+  saveChatWith(state.chatWith);
   pushNav('chat');
   render();
   markChatNotificationsRead(otherUid);
@@ -3309,7 +3172,7 @@ function openChat(otherUid, otherName){
 function closeChat(fromBack){
   teardownChat();
   state.chatWith = null;
-  clearChatWith(); // المستخدم قفل الشات بنفسه، فمن حقه إن الـ Refresh بعد كده يرجّعه للرئيسية
+  clearChatWith();
   if(!fromBack) popNavIfMatches('chat');
   render();
 }
@@ -3325,7 +3188,7 @@ function teardownChat(){
   state.chatUnseenWhileUp = 0;
   (state.pendingAttachments||[]).forEach(a=>{ if(a.previewUrl) URL.revokeObjectURL(a.previewUrl); });
   state.pendingAttachments = [];
-  cancelVoiceRecording(); // لو المستخدم خرج من الشات وهو لسه بيسجل صوت، نلغي التسجيل وننظف المايك
+  cancelVoiceRecording();
   chatSearchHits = []; chatSearchActiveIdx = -1;
 }
 function screenChat(){
@@ -3420,7 +3283,7 @@ function bindChatEvents(){
   $('#btnRecordVoice').addEventListener('click', startVoiceRecording);
   $('#btnCancelVoice').addEventListener('click', cancelVoiceRecording);
   $('#btnSendVoice').addEventListener('click', stopVoiceRecordingAndSend);
-  // Drag & Drop على الكمبيوتر — إفلات الملفات في مساحة المحادثة
+
   const dropZone = $('.chat-body-wrap');
   if(dropZone){
     let dragCounter = 0;
@@ -3433,7 +3296,7 @@ function bindChatEvents(){
       if(files.length) handleFilesSelected(files);
     });
   }
-  // حالة الاتصال بشكل لحظي (مش مرة واحدة بس)
+
   const presRef = db.ref('presence/'+o.uid);
   state.chatPresenceRef = presRef;
   presRef.on('value', snap=>{
@@ -3443,7 +3306,6 @@ function bindChatEvents(){
   });
   const chatId = pairId(state.user.uid, o.uid);
 
-  /* ====== مؤشر "جاري الكتابة" ====== */
   const myTypingRef = db.ref(`chatThreads/${chatId}/typing/${state.user.uid}`);
   state.myTypingRef = myTypingRef;
   try{ myTypingRef.onDisconnect().remove(); }catch(_){}
@@ -3462,7 +3324,6 @@ function bindChatEvents(){
     }
   });
 
-  /* ====== الرسالة المثبّتة ====== */
   const pinnedRef = db.ref(`chatThreads/${chatId}/pinnedMsgId`);
   state.chatPinnedRef = pinnedRef;
   pinnedRef.on('value', snap=>{
@@ -3486,7 +3347,6 @@ function bindChatEvents(){
     if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
   });
 
-  /* ====== قفزة لآخر الرسائل ====== */
   const chatBody = $('#chatBody');
   chatBody.addEventListener('scroll', ()=>{
     const nearBottom = chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight < 120;
@@ -3506,7 +3366,7 @@ function bindChatEvents(){
     const body = $('#chatBody');
     if(!body) return;
     const myUid = state.user.uid;
-    // نستثني الرسائل اللي أنا حذفتها "عندي فقط" — تفضل موجودة عند الطرف التاني
+
     const entries = Object.entries(msgs)
       .filter(([id,m])=> !(m.deletedFor && m.deletedFor[myUid]))
       .sort((a,b)=>(a[1].ts||0)-(b[1].ts||0));
@@ -3522,7 +3382,7 @@ function bindChatEvents(){
       state.chatUnseenWhileUp = 0;
       $('#btnJumpLatest').style.display='none';
     } else {
-      body.scrollTop = prevScrollTop; // نحافظ على مكان القراءة الحالي
+      body.scrollTop = prevScrollTop;
       if(isNewLast && !lastIsMine){
         state.chatUnseenWhileUp = (state.chatUnseenWhileUp||0) + 1;
         $('#btnJumpLatest').style.display='flex';
@@ -3530,8 +3390,10 @@ function bindChatEvents(){
       }
     }
     state.chatLastRenderedLastId = lastEntry ? lastEntry[0] : null;
-    // تحديث حالة القراءة للرسائل الواردة (غير المحذوفة)
-    entries.forEach(([id,m])=>{ if(m.senderUid!==myUid && !m.read && !m.deleted){ db.ref(`chatThreads/${chatId}/messages/${id}/read`).set(true); } });
+
+    const unreadUpdates = {};
+    entries.forEach(([id,m])=>{ if(m.senderUid!==myUid && !m.read && !m.deleted){ unreadUpdates[`${id}/read`] = true; } });
+    if(Object.keys(unreadUpdates).length){ db.ref(`chatThreads/${chatId}/messages`).update(unreadUpdates); }
     $all('.chat-img', body).forEach(img=> img.addEventListener('click', ()=> openImgViewer(img.dataset.full||img.src)));
     $all('.bubble[data-msg-id]', body).forEach(el=>{
       el.addEventListener('dblclick', ()=> setReplyTo(el.dataset.msgId, msgs[el.dataset.msgId]));
@@ -3539,7 +3401,7 @@ function bindChatEvents(){
   });
   bindMessageLongPress(chatId);
 }
-/* ====== البحث داخل المحادثة — بيدور في الرسائل النصية المحمّلة حاليًا في الشات ====== */
+
 let chatSearchHits = [];
 let chatSearchActiveIdx = -1;
 function closeChatSearch(){
@@ -3598,7 +3460,7 @@ function renderChatBubble(id, m){
   const editedTag = m.edited ? `<span class="edited-tag">(تم التعديل)</span>` : '';
   const quoted = (m.replyTo && !m.deleted) ? `<div class="quoted-reply"><b>${m.replyTo.senderUid===state.user.uid?'أنت':esc(state.chatWith.name)}</b>${esc(m.replyTo.preview||'')}</div>` : '';
   const fwdTag = m.forwarded ? `<div class="edited-tag" style="display:block;margin-bottom:4px">↪️ رسالة موجّهة</div>` : '';
-  // كل رسالة بتاخد data-msg-id/data-mine عشان الضغط المطوّل يقدر يحذفها (زي الواتس)
+
   if(m.deleted){
     return `<div class="bubble ${mine?'me':'them'} deleted-bubble" data-msg-id="${id}" data-mine="${mine?'1':'0'}">
       <span class="deleted-icon">🚫</span> تم حذف هذه الرسالة
@@ -3631,7 +3493,7 @@ function renderChatBubble(id, m){
     </div>`;
   }
   if(m.type==='call_invite'){
-    // فقاعة دعوة مكالمة: تظهر عند الطرفين، وزر الانضمام يشتغل فقط طالما الغرفة لسه مفتوحة
+
     return `<div class="bubble call-invite-bubble ${mine?'me':'them'}" data-msg-id="${id}" data-mine="${mine?'1':'0'}">
       ${fwdTag}
       <div class="call-invite-ic">📞</div>
@@ -3646,22 +3508,25 @@ async function sendChatMessage(){
   const input = $('#chatInput'); const text = input.value.trim();
   if(!text) return;
   const o = state.chatWith; const chatId = pairId(state.user.uid, o.uid);
-  input.value='';
   const payload = { senderUid: state.user.uid, type:'text', text, ts: firebase.database.ServerValue.TIMESTAMP, read:false };
   if(state.replyTo){ payload.replyTo = { msgId: state.replyTo.msgId, preview: state.replyTo.preview, senderUid: state.replyTo.senderUid }; }
   try{
     await db.ref('chatThreads/'+chatId+'/messages').push(payload);
+    input.value='';
     bumpMessagesCounter();
     pushMessageNotification(o.uid, text);
     setReplyTo(null);
     if(state.myTypingRef) state.myTypingRef.remove();
     if(state.typingTimeout){ clearTimeout(state.typingTimeout); state.typingTimeout=null; }
-  }catch(e){ toast('تعذر إرسال الرسالة'); }
+  }catch(e){
+    if(!input.value.trim()) input.value = text;
+    toast('تعذر إرسال الرسالة');
+  }
 }
-/* ====== حذف الرسائل بالضغط المطوّل (زي واتساب) ====== */
+
 function bindMessageLongPress(chatId){
   const body = $('#chatBody');
-  if(!body || body._longPressBound) return; // نمنع تكرار ربط المستمعين لما الشات يتفتح أكتر من مرة
+  if(!body || body._longPressBound) return;
   body._longPressBound = true;
   const LONG_PRESS_MS = 450, MOVE_TOLERANCE = 10;
   let pressTimer = null, startX = 0, startY = 0, targetBubble = null;
@@ -3686,7 +3551,7 @@ function bindMessageLongPress(chatId){
   }, {passive:true});
   body.addEventListener('touchend', clearPress);
   body.addEventListener('touchcancel', clearPress);
-  // دعم الفأرة على الكمبيوتر: ضغط مطوّل بالزر الشمال + كليك يمين كاختصار مباشر
+
   body.addEventListener('mousedown', e=>{
     if(e.button!==0) return;
     const bubble = e.target.closest('.bubble[data-msg-id]');
@@ -3707,13 +3572,13 @@ function bindMessageLongPress(chatId){
     openMsgActionSheet(chatId, bubble.dataset.msgId, bubble.dataset.mine==='1');
   });
 }
-const EDIT_WINDOW_MS = 15*60*1000; // مدة السماح بتعديل الرسالة: 15 دقيقة من وقت الإرسال
+const EDIT_WINDOW_MS = 15*60*1000;
 function openMsgActionSheet(chatId, msgId, mine){
   const m = (state.chatMsgsCache||{})[msgId];
   if(!m || m.deleted) return;
   const canEdit = mine && m.type==='text' && (Date.now() - (m.ts||0) < EDIT_WINDOW_MS);
   const isPinned = $('#pinnedBanner')?.dataset.pinId === msgId;
-  const canForward = state.profile?.role==='teacher'; // التوجيه متاح للمعلمة بس (عندها أكتر من طالب تختار بينهم)
+  const canForward = state.profile?.role==='teacher';
   showModal(`
     <h3>خيارات الرسالة</h3>
     <button class="btn ghost" id="btnReplyMsg" style="margin-bottom:10px">↩️ رد على الرسالة</button>
@@ -3743,7 +3608,7 @@ async function openForwardPicker(m){
   showModal(`<h3>إعادة توجيه إلى...</h3><div id="forwardPickerList"><div class="empty-state">جارِ التحميل...</div></div>`);
   try{
     const assignSnap = await db.ref('assignments/'+state.user.uid).get();
-    const studentIds = Object.keys(assignSnap.val()||{}).filter(sid=> !state.chatWith || sid!==state.chatWith.uid); // بنستبعد الشخص المفتوح معاه الشات حاليًا
+    const studentIds = Object.keys(assignSnap.val()||{}).filter(sid=> !state.chatWith || sid!==state.chatWith.uid);
     if(!studentIds.length){ $('#forwardPickerList').innerHTML = '<div class="empty-state">مفيش طلاب تانيين لإعادة التوجيه ليهم</div>'; return; }
     const usersSnaps = await Promise.all(studentIds.map(sid=>db.ref('users/'+sid).get()));
     const list = studentIds.map((sid,i)=>({sid, name: (usersSnaps[i].val()||{}).name || 'طالب'}));
@@ -3751,7 +3616,7 @@ async function openForwardPicker(m){
       <div class="list-item" data-fwd="${s.sid}"><div class="avatar">${initials(s.name)}</div><div class="li-body"><b>${esc(s.name)}</b></div></div>`).join('');
     $all('[data-fwd]', $('#forwardPickerList')).forEach(el=>{
       el.addEventListener('click', ()=>{
-        if(el.dataset.sending) return; // منع الضغط المزدوج السريع من إرسال نفس الرسالة مرتين
+        if(el.dataset.sending) return;
         el.dataset.sending = '1';
         forwardMessageTo(el.dataset.fwd, m);
       });
@@ -3803,17 +3668,15 @@ function openEditMessageModal(chatId, msgId, currentText){
 async function deleteMessage(chatId, msgId, forEveryone){
   try{
     if(forEveryone){
-      // حذف لدى الجميع: بيعلّم على الرسالة "محذوفة" فبتظهر للطرفين كذلك، لكن المحتوى
-      // الأصلي بيفضل موجود فعليًا في القاعدة (عشان الأدمن يقدر يشوفه في شاشة مراجعة
-      // المحادثات — "حرف ميتحذفش" عند الأدمن حتى لو الطرفين حذفوه بينهم).
+
       await db.ref(`chatThreads/${chatId}/messages/${msgId}`).update({
         deleted: true, deletedAt: firebase.database.ServerValue.TIMESTAMP
       });
-      // لو الرسالة المحذوفة كانت هي المثبّتة، نشيل التثبيت
+
       const pinSnap = await db.ref(`chatThreads/${chatId}/pinnedMsgId`).once('value');
       if(pinSnap.val()===msgId) db.ref(`chatThreads/${chatId}/pinnedMsgId`).remove();
     }else{
-      // حذف عندي فقط: بيتفلتر من واجهتي بس، وتفضل الرسالة موجودة عند الطرف التاني والأدمن
+
       await db.ref(`chatThreads/${chatId}/messages/${msgId}/deletedFor/${state.user.uid}`).set(true);
     }
     hideModal();
@@ -3823,10 +3686,10 @@ async function deleteMessage(chatId, msgId, forEveryone){
     toast('تعذر حذف الرسالة: ' + (e.message||''));
   }
 }
-/* ====== ضغط الصور قبل الرفع — بيقلل حجم الصورة قبل ما تتبعت لسيرفر Cloudinary ====== */
+
 function compressImageFile(file){
   return new Promise(resolve=>{
-    if(!file.type.startsWith('image/') || file.type==='image/gif'){ resolve(file); return; } // GIF ميتضغطش عشان الحركة
+    if(!file.type.startsWith('image/') || file.type==='image/gif'){ resolve(file); return; }
     const objUrl = URL.createObjectURL(file);
     const img = new Image();
     img.onload = ()=>{
@@ -3841,7 +3704,7 @@ function compressImageFile(file){
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
       canvas.toBlob(blob=>{
         URL.revokeObjectURL(objUrl);
-        if(!blob || blob.size >= file.size){ resolve(file); return; } // لو الضغط زوّد الحجم، ابعت الأصلي
+        if(!blob || blob.size >= file.size){ resolve(file); return; }
         resolve(new File([blob], file.name, {type:'image/jpeg'}));
       }, 'image/jpeg', 0.78);
     };
@@ -3850,7 +3713,6 @@ function compressImageFile(file){
   });
 }
 
-/* ====== معاينة الملفات/الصور قبل الإرسال — بتسمح باختيار أكتر من ملف مرة واحدة ====== */
 let attachIdCounter = 0;
 function handleFilesSelected(files){
   files.forEach(file=>{
@@ -3894,14 +3756,14 @@ async function sendPendingAttachments(){
   renderAttachPreview();
   for(const a of list){
     if(a.previewUrl) URL.revokeObjectURL(a.previewUrl);
-    await uploadChatFile(a.file); // بالتتابع عشان شريط التقدم يبان صح لكل ملف على حدة
+    await uploadChatFile(a.file);
   }
 }
-/* ====== تسجيل وإرسال الرسائل الصوتية ====== */
-const MAX_VOICE_SECONDS = 180; // حد أقصى 3 دقائق للرسالة الصوتية الواحدة
+
+const MAX_VOICE_SECONDS = 180;
 let voiceRecorder = null, voiceChunks = [], voiceStream = null, voiceStartTs = 0, voiceTimerInt = null;
 async function startVoiceRecording(){
-  if(voiceRecorder) return; // فيه تسجيل شغال بالفعل
+  if(voiceRecorder) return;
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ toast('المتصفح ده مش بيدعم تسجيل الصوت'); return; }
   try{
     voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -3918,7 +3780,7 @@ async function startVoiceRecording(){
     const secs = Math.floor((Date.now()-voiceStartTs)/1000);
     const el = $('#voiceRecordTimer');
     if(el) el.textContent = String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');
-    if(secs >= MAX_VOICE_SECONDS) stopVoiceRecordingAndSend(); // إيقاف تلقائي عند الحد الأقصى
+    if(secs >= MAX_VOICE_SECONDS) stopVoiceRecordingAndSend();
   };
   paintTimer();
   voiceTimerInt = setInterval(paintTimer, 500);
@@ -3938,14 +3800,14 @@ function cancelVoiceRecording(){
   stopVoiceTracksAndUI();
 }
 function stopVoiceRecordingAndSend(){
-  if(!voiceRecorder || voiceRecorder.state!=='recording') return; // منع استدعاء stop() مرتين لو المستخدم دبل على زرار الإرسال بسرعة
+  if(!voiceRecorder || voiceRecorder.state!=='recording') return;
   const durationSec = Math.round((Date.now()-voiceStartTs)/1000);
   const mimeType = voiceRecorder.mimeType || 'audio/webm';
   voiceRecorder.onstop = ()=>{
     const blob = new Blob(voiceChunks, {type: mimeType});
     voiceChunks = [];
     stopVoiceTracksAndUI();
-    if(blob.size < 500){ toast('التسجيل قصير جدًا'); return; } // تجاهل تسجيلات فارغة بالغلط
+    if(blob.size < 500){ toast('التسجيل قصير جدًا'); return; }
     const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
     const file = new File([blob], `voice-${Date.now()}.${ext}`, {type: mimeType});
     uploadChatFile(file, { duration: durationSec });
@@ -3963,12 +3825,12 @@ async function uploadChatFile(file, opts){
   }
   const isImage = file.type.startsWith('image/');
   const isAudio = file.type.startsWith('audio/');
-  if(isImage) file = await compressImageFile(file); // تصغير الصورة قبل الرفع لتوفير الوقت والباقة
+  if(isImage) file = await compressImageFile(file);
   const chatId = pairId(state.user.uid, o.uid);
   const wrap = $('#uploadProgressWrap'), fill = $('#uploadProgressFill');
   if(wrap) wrap.style.display='block';
   try{
-    // "auto" بتخلي Cloudinary يكتشف نوع الملف بنفسه (صورة/فيديو/صوت/ملف عادي زي pdf أو docx أو zip)
+
     const url = await new Promise((resolve, reject)=>{
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`);
@@ -4007,18 +3869,10 @@ async function uploadChatFile(file, opts){
   }
 }
 
-/* =====[ SECTION: CALLS (WebRTC) — نظام غرفة الاتصال (المعلمة تُنشئ / الطالبة تُدعى) ]=====
-   منطق إدارة الغرفة (إنشاء/دعوة/انضمام/إنهاء) عبر Firebase زي ما هو تمامًا من غير أي تغيير.
-   المعلمة هي الوحيدة اللي تقدر "تُنشئ" غرفة، وبعدين تبعت دعوة داخل نفس الشات، والطالبة
-   تنضم بضغطة واحدة من غير ما تكتب أي كود يدويًا. منطق الصوت نفسه (تحت) بقى WebRTC أصلي
-   + TURN مجاني بدل Agora. */
-// كود عرض قصير فقط (للتوثيق البصري داخل الكارد) — الطالبة لا تحتاج تكتبه أبدًا، الانضمام بالكامل تلقائي عبر زر الدعوة
 function callDisplayCode(callId){
   return String(callId).replace(/[^a-zA-Z0-9]/g,'').slice(-8).toUpperCase();
 }
-// اسم قناة Agora لازم ميتعديش 64 بايت — و callId عبارة عن يوزر آيديز فايربيز مضمومة لبعض (28 حرف لكل واحد)،
-// فبيطلع أطول من 64 بايت و Agora بيرفضه (وده كان سبب "تعذر الدخول على المكالمة" اللي بيحصل كل مرة).
-// الحل: نحوّل الـ callId لهاش قصير وثابت (نفس المدخل بيدي نفس الناتج دايمًا) ونستخدمه كاسم قناة بدل الأصلي.
+
 function shortChannelId(callId){
   let h1=0, h2=0; const s=String(callId);
   for(let i=0;i<s.length;i++){
@@ -4029,7 +3883,6 @@ function shortChannelId(callId){
   return 'c_'+(h1>>>0).toString(36)+(h2>>>0).toString(36);
 }
 
-/* =====[ الشيت السفلي عند الضغط على زر الاتصال داخل الشات ]===== */
 function teardownCallSheetWatcher(){
   if(state._callSheetWatcher){
     state._callSheetWatcher.ref.off('value', state._callSheetWatcher.cb);
@@ -4038,9 +3891,9 @@ function teardownCallSheetWatcher(){
   state._callSheetCtx = null;
 }
 function openCallSheet(otherUid, otherName){
-  // منع فتح الشيت وانت أصلاً جوه مكالمة شغالة فعليًا
+
   if(state.currentCallId){ toast('انت بالفعل في مكالمة، أنهِها الأول'); return; }
-  teardownCallSheetWatcher(); // تنظيف أي مستمع شيت قديم متبقٍّ قبل ما نفتح واحد جديد
+  teardownCallSheetWatcher();
   const myUid = state.user.uid;
   const isTeacher = state.profile.role==='teacher';
   const callId = pairId(myUid, otherUid);
@@ -4065,7 +3918,7 @@ function renderCallSheetBody(call, ctx){
   if(ctx.isTeacher) return renderCallSheetTeacher(active ? call : null, ctx);
   return renderCallSheetStudent(active ? call : null, ctx);
 }
-/* ---- شكل الشيت عند المعلمة ---- */
+
 function renderCallSheetTeacher(call, ctx){
   if(!call){
     return `<h3 style="text-align:center">📞 مكالمة صوتية</h3>
@@ -4095,10 +3948,10 @@ function renderCallSheetTeacher(call, ctx){
   }
   return `<h3 style="text-align:center">📞 مكالمة صوتية</h3><div class="call-sheet-icon">🎙️</div><button class="btn" id="btnCreateCallRoom">➕ إنشاء غرفة اتصال</button>`;
 }
-/* ---- شكل الشيت عند الطالبة ---- */
+
 function renderCallSheetStudent(call, ctx){
   if(!call || call.status==='created'){
-    // 'created' يعني المعلمة أنشأت الغرفة بس لسه ما بعتتش الدعوة — بالنسبة للطالبة زي معندهاش غرفة
+
     return `<h3 style="text-align:center">📞 مكالمة صوتية</h3>
     <div class="call-waiting-wrap">
       <div class="call-waiting-ring"><span class="ic">📞</span></div>
@@ -4117,7 +3970,7 @@ function renderCallSheetStudent(call, ctx){
   return renderCallSheetStudent(null, ctx);
 }
 function bindCallSheetActions(){
-  // تفويض واحد على المودال بالكامل بدل إعادة ربط الأزرار كل مرة يتحدّث فيها المحتوى (منع Duplicate Event Listeners)
+
   const sheet = $('#modalSheet');
   if(!sheet || sheet._callSheetBound) return;
   sheet._callSheetBound = true;
@@ -4140,15 +3993,14 @@ function bindCallSheetActions(){
   });
 }
 
-/* =====[ إنشاء الغرفة (المعلمة فقط) — Transaction لمنع أكتر من مكالمة نشطة لنفس المعلمة ولمنع Race Conditions ]===== */
 async function createCallRoomFlow(ctx){
   const {callId, teacherId, studentId} = ctx;
   const channel = shortChannelId(callId);
   try{
-    // قفل ذري: يمنع إنشاء أكتر من مكالمة نشطة لنفس المعلمة، حتى لو ضغطت على "إنشاء" من جهازين/تابين في نفس اللحظة
+
     const lockRef = db.ref('activeTeacherCalls/'+teacherId);
     const txResult = await lockRef.transaction(cur=>{
-      if(cur && cur!==callId) return; // فيه غرفة تانية شغالة بالفعل لنفس المعلمة — نرفض ونسيب القيمة زي ما هي
+      if(cur && cur!==callId) return;
       return callId;
     });
     if(!txResult.committed){
@@ -4158,7 +4010,7 @@ async function createCallRoomFlow(ctx){
     const callRef = db.ref('calls/'+callId);
     const existingSnap = await callRef.get();
     const existing = existingSnap.val();
-    // منع وجود أكثر من غرفة لنفس المحادثة: لو فيه غرفة غير منتهية بالفعل لنفس الشات، استخدميها بدل تكرارها
+
     if(!existing || existing.status==='ended'){
       await callRef.set({
         callId, teacherId, studentId, channel, status:'created',
@@ -4190,7 +4042,7 @@ async function sendCallInvite(ctx){
     toast('تعذر إرسال الدعوة');
   }
 }
-/* المعلمة تلغي/تنهي الغرفة — يقفل الغرفة للجميع فورًا ويحرر القفل الخاص بيها */
+
 async function teacherEndOrCancelRoom(callId, teacherId){
   try{
     await db.ref('calls/'+callId).update({ status:'ended', endedAt: firebase.database.ServerValue.TIMESTAMP });
@@ -4200,7 +4052,6 @@ async function teacherEndOrCancelRoom(callId, teacherId){
   }catch(e){ console.error(e); }
 }
 
-/* =====[ الانضمام لغرفة الاتصال (من الشيت أو من زر الدعوة داخل الشات) ]===== */
 async function joinCallRoom(callId){
   if(state.currentCallId){ if(state.currentCallId!==callId) toast('انت بالفعل في مكالمة تانية'); return; }
   try{
@@ -4208,7 +4059,7 @@ async function joinCallRoom(callId){
     const call = snap.val();
     if(!call || call.status==='ended'){ toast('المكالمة لم تعد متاحة'); return; }
     const myUid = state.user.uid;
-    // لا يسمح بدخول أي شخص غير طرفَي هذه المحادثة تحديدًا
+
     if(myUid!==call.teacherId && myUid!==call.studentId){ toast('غير مسموح لك بالانضمام لهذه المكالمة'); return; }
     const peerUid = myUid===call.teacherId ? call.studentId : call.teacherId;
     const peerSnap = await db.ref('users/'+peerUid).get();
@@ -4225,7 +4076,6 @@ async function joinCallRoom(callId){
   }
 }
 
-/* =====[ إشعار عام (بانر) عبر المنصة كلها بدعوة واردة — تحسين إضافي فوق الدعوة داخل الشات نفسه ]===== */
 let callPeerWatchRef = null;
 function teardownCallPeerWatch(){
   if(callPeerWatchRef){ callPeerWatchRef.ref.off('value', callPeerWatchRef.cb); callPeerWatchRef=null; }
@@ -4257,9 +4107,9 @@ function setupCallListenersForPeers(peers){
     const cb = snap=>{
       const c = snap.val();
       if(!c) return;
-      // البانر العام يظهر للطالبة فقط لحظة إرسال الدعوة (وليس مجرد إنشاء الغرفة)
+
       if(c.status==='invited' && myUid===c.studentId){
-        if(state.currentCallId && state.currentCallId!==callId) return; // مكالمة تانية شغالة أصلاً
+        if(state.currentCallId && state.currentCallId!==callId) return;
         showIncomingBanner(peerUid, callId);
       }
       if(c.status==='ended'){
@@ -4290,7 +4140,6 @@ async function showIncomingBanner(fromUid, callId){
 }
 function hideIncomingBanner(){ const b=$('#incomingBanner'); if(b) b.classList.remove('active'); }
 
-/* =====[ شاشة المكالمة الكاملة (تصميم أصلي جديد بهوية المنصة) ]===== */
 function openCallOverlay(peer, callId, channel){
   state.currentCallId = callId;
   const overlay = $('#callOverlay');
@@ -4316,13 +4165,13 @@ function openCallOverlay(peer, callId, channel){
   const isTeacher = state.profile.role==='teacher';
   $('#btnEndCall').onclick = async ()=>{
     if(isTeacher){
-      // إنهاء المعلمة للمكالمة يُنهيها للجميع، ويحرر قفل "مكالمة نشطة واحدة للمعلمة"
+
       await db.ref('calls/'+callId).update({ status:'ended', endedAt: firebase.database.ServerValue.TIMESTAMP });
       const teacherId = state.user.uid;
       const lockSnap = await db.ref('activeTeacherCalls/'+teacherId).get();
       if(lockSnap.val()===callId) await db.ref('activeTeacherCalls/'+teacherId).remove();
     } else {
-      // خروج الطالبة لا يُنهي الغرفة — تقدر ترجع طالما لسه مفتوحة (حالة المكالمة تفضل 'active')
+
       await db.ref(`calls/${callId}/participants/${state.user.uid}`).remove();
     }
     endCallUI(callId);
@@ -4353,15 +4202,9 @@ function setSoundwaveActive(active){
   if(el) el.classList.toggle('speaking', !!active);
 }
 
-/* =====[ منطق WebRTC أصلي (بديل Agora) — Join / Signaling عبر Firebase / TURN مجاني (OpenRelay) ]=====
-   الفكرة: بدل ما نعتمد على Agora (السيرفر بتاعه + سيرفر توكنات خارجي كانوا سبب انقطاع المكالمات)،
-   بنستخدم RTCPeerConnection الأصلي في المتصفح، وبنستخدم Firebase (اللي أصلاً شغال 100% في المنصة)
-   كقناة "تبادل إشارة" (Signaling) بين الطرفين تحت calls/{callId}/rtc، والـ TURN المجاني بيتكفل
-   بحالات الشبكات الصعبة (فايروول/NAT) لو الاتصال المباشر فشل. الدور ثابت دايمًا: المعلمة = Offerer،
-   الطالبة = Answerer — بغض النظر عن مين دخل المكالمة الأول، عشان مفيش أي Race Condition. */
 async function joinWebRTCCall(channel, callId){
   try{
-    // تنظيف احترازي لأي جلسة WebRTC قديمة عالقة قبل ما تبدأ جلسة جديدة
+
     await teardownWebRTC();
     const call = (await db.ref('calls/'+callId).get()).val();
     if(!call){ throw new Error('call-not-found'); }
@@ -4370,7 +4213,7 @@ async function joinWebRTCCall(channel, callId){
     state._rtcRole = isOfferer ? 'offerer' : 'answerer';
     state._rtcRetryCount = 0;
     setCallConnDot('reconnecting');
-    // تحسين جودة الصوت: إلغاء الصدى + تقليل الضوضاء + تحكم تلقائي في مستوى الصوت
+
     state.localStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
     });
@@ -4387,7 +4230,7 @@ async function joinWebRTCCall(channel, callId){
     toast('تعذر الدخول على المكالمة — تأكد من إذن الميكروفون واتصال الإنترنت');
   }
 }
-/* ---------- إنشاء اتصال WebRTC وربطه بقناة الإشارة على Firebase ---------- */
+
 async function startPeerConnection(callId, isOfferer){
   const rtcRef = db.ref('calls/'+callId+'/rtc');
   const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
@@ -4410,7 +4253,6 @@ async function startPeerConnection(callId, isOfferer){
     if(event.candidate) rtcRef.child(myCandField).push(event.candidate.toJSON());
   };
 
-  // مؤشر حالة الاتصال + إعادة الاتصال التلقائية عند انقطاع الشبكة (بديل reconnect بتاع Agora)
   pc.oniceconnectionstatechange = ()=>{
     const cs = pc.iceConnectionState;
     const statusEl = $('#callStatusText');
@@ -4439,7 +4281,6 @@ async function startPeerConnection(callId, isOfferer){
     }
   };
 
-  // استقبال مرشحات ICE من الطرف التاني — child_added بيلقط الموجود سابقًا + أي جديد أول ما يوصل
   const peerCandRef = rtcRef.child(peerCandField);
   const candCb = snap=>{
     const cand = snap.val();
@@ -4450,7 +4291,7 @@ async function startPeerConnection(callId, isOfferer){
   else state._rtcOfferCandRef = {ref:peerCandRef, cb:candCb};
 
   if(isOfferer){
-    // المعلمة: تمسح أي Offer/Answer قديم من جلسة سابقة، وتبعت Offer جديد
+
     await rtcRef.child('offer').remove();
     await rtcRef.child('answer').remove();
     const offer = await pc.createOffer();
@@ -4467,7 +4308,7 @@ async function startPeerConnection(callId, isOfferer){
     answerRef.on('value', answerCb);
     state._rtcAnswerRef = {ref:answerRef, cb:answerCb};
   } else {
-    // الطالبة: تستنى وصول الـ Offer وترد عليه بـ Answer (وبترد تاني لو المعلمة عملت Restart لأي سبب)
+
     const offerRef = rtcRef.child('offer');
     const offerCb = async snap=>{
       const off = snap.val();
@@ -4483,7 +4324,7 @@ async function startPeerConnection(callId, isOfferer){
     state._rtcOfferRef = {ref:offerRef, cb:offerCb};
   }
 }
-/* ---------- محاولة إعادة اتصال (ICE Restart) من جانب المعلمة (Offerer) عند فشل الاتصال ---------- */
+
 async function restartIce(callId, pc){
   try{
     if(pc.signalingState==='closed') return;
@@ -4494,7 +4335,7 @@ async function restartIce(callId, pc){
     await rtcRef.child('offer').set({ sdp: offer.sdp, type: offer.type });
   }catch(e){ console.error(e); }
 }
-/* ---------- مؤشر "الموجات الصوتية" أثناء الكلام — بيعتمد على مستوى صوت حقيقي من صوت الطرف التاني ---------- */
+
 function startSoundwaveMonitor(stream){
   try{
     if(state._rtcAnalyserRaf) cancelAnimationFrame(state._rtcAnalyserRaf);
@@ -4513,9 +4354,9 @@ function startSoundwaveMonitor(stream){
       state._rtcAnalyserRaf = requestAnimationFrame(tick);
     };
     tick();
-  }catch(_){ /* تجاهل لو المتصفح مايدعمش AnalyserNode — ميض المكالمة نفسها بتفضل شغالة عادي */ }
+  }catch(_){   }
 }
-/* ---------- إزالة كل مستمعي/موارد WebRTC بالكامل ومنع تسريب الذاكرة ---------- */
+
 async function teardownWebRTC(){
   if(state._rtcAnalyserRaf){ cancelAnimationFrame(state._rtcAnalyserRaf); state._rtcAnalyserRaf=null; }
   if(state._rtcAnalyserCtx){ try{ state._rtcAnalyserCtx.close(); }catch(_){} state._rtcAnalyserCtx=null; }
@@ -4533,21 +4374,54 @@ async function endCallUI(callId){
   $('#callOverlay').classList.remove('active');
   clearInterval(state.callTimerInt); state.callTimerInt=null;
   setSoundwaveActive(false);
-  // إزالة كل موارد WebRTC بالكامل ومنع تسريب الذاكرة — Destroy/Cleanup شامل، ومنع Duplicate Events في الجلسة الجاية
+
   await teardownWebRTC();
   if(state._callPeerMutedWatcher){ state._callPeerMutedWatcher.ref.off('value', state._callPeerMutedWatcher.cb); state._callPeerMutedWatcher=null; }
   try{ if(callId) db.ref(`calls/${callId}/muted/${state.user.uid}`).remove(); }catch(_){}
   state.currentCallId = null;
 }
 
-/* =====[ التقاط زر "الانضمام للمكالمة" داخل فقاعة الدعوة بالشات ]===== */
 document.addEventListener('click', e=>{
   const btn = e.target.closest('.call-invite-join-btn');
   if(!btn) return;
   const callId = btn.dataset.callId;
   if(callId) joinCallRoom(callId);
 });
-/* =====[ SECTION: BOOTSTRAP ]===== */
+
+(function setupAppViewportFix(){
+  try{
+    const root = document.documentElement;
+    let raf = null;
+    function applyVH(){
+      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+      root.style.setProperty('--app-vh', h + 'px');
+      root.classList.add('has-app-vh');
+    }
+    function scheduleVH(){
+      if(raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(applyVH);
+    }
+    applyVH();
+    window.addEventListener('resize', scheduleVH, {passive:true});
+    window.addEventListener('orientationchange', scheduleVH, {passive:true});
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', scheduleVH, {passive:true});
+      window.visualViewport.addEventListener('scroll', scheduleVH, {passive:true});
+    }
+  }catch(_){   }
+})();
+
+document.addEventListener('focusin', e=>{
+  if(e.target && e.target.id==='chatInput'){
+    setTimeout(()=>{
+      const body = document.getElementById('chatBody');
+      if(body && (state.chatUserIsNearBottom !== false)){
+        body.scrollTop = body.scrollHeight;
+      }
+    }, 300);
+  }
+});
+
 render();
 </script>
 </body>
