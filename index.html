@@ -611,7 +611,7 @@ let state = {
   pc:null, localStream:null, currentCallId:null, callTimerInt:null, callSeconds:0,
   _callSheetWatcher:null, _callSheetCtx:null, _callListeners:[], _callPeerMutedWatcher:null,
   _rtcOfferRef:null, _rtcAnswerRef:null, _rtcOfferCandRef:null, _rtcAnswerCandRef:null,
-  _rtcRole:null, _rtcRetryCount:0, _rtcAnalyserCtx:null, _rtcAnalyserRaf:null,
+  _rtcRole:null, _rtcRetryCount:0, _rtcAnalyserCtx:null, _rtcAnalyserRaf:null, _rtcDisconnectTimer:null, _ringTimeout:null,
   studentsCache:{}, teachersCache:{}, route:'loading', routeParams:{},
   maintenance:{enabled:false, message:''} // حالة وضع الصيانة — بتتحدث لحظيًا من siteConfig/maintenance حتى قبل تسجيل الدخول
 };
@@ -4164,30 +4164,25 @@ function renderCallSheetTeacher(call, ctx){
   if(!call){
     return `<h3 style="text-align:center">📞 مكالمة صوتية</h3>
     <div class="call-sheet-icon">🎙️</div>
-    <p style="text-align:center;color:var(--text-dim);font-size:13.5px;margin:0 0 18px">
-      أنشئي غرفة اتصال صوتي، وبعد كده ابعتي الدعوة لـ ${esc(ctx.otherName)} داخل نفس المحادثة.
-    </p>
-    <button class="btn" id="btnCreateCallRoom">➕ إنشاء غرفة اتصال</button>`;
+    <button class="btn" id="btnCreateCallRoom">📞 اتصال الآن</button>`;
   }
   if(call.status==='created' || call.status==='invited'){
-    const statusText = call.status==='invited' ? 'بانتظار انضمام الطالبة...' : 'الغرفة جاهزة — لسه محدش اتبعتله دعوة';
     return `<h3 style="text-align:center">📞 مكالمة صوتية</h3>
     <div class="call-room-card">
-      <div class="call-room-status"><span class="call-conn-dot ${call.status==='invited'?'reconnecting':'good'}"></span>${statusText}</div>
-      <div class="call-room-code">${esc(callDisplayCode(ctx.callId))}</div>
-      ${call.status==='created' ? `<button class="btn" id="btnSendCallInvite">📨 إرسال الدعوة للطالبة</button>` : `<button class="btn" id="btnJoinMyRoom">📞 الدخول للمكالمة الآن</button>`}
-      <button class="btn ghost" id="btnCancelCallRoom" style="margin-top:10px">إلغاء الغرفة</button>
+      <div class="call-room-status"><span class="call-conn-dot reconnecting"></span>جارِ الاتصال بالطالبة...</div>
+      <button class="btn" id="btnJoinMyRoom">📞 فتح شاشة المكالمة</button>
+      <button class="btn ghost" id="btnCancelCallRoom" style="margin-top:10px">إلغاء</button>
     </div>`;
   }
   if(call.status==='active'){
     return `<h3 style="text-align:center">📞 مكالمة صوتية</h3>
     <div class="call-room-card">
       <div class="call-room-status"><span class="call-conn-dot good"></span>المكالمة جارية الآن</div>
-      <button class="btn" id="btnJoinMyRoom">📞 الدخول للمكالمة</button>
+      <button class="btn" id="btnJoinMyRoom">📞 فتح شاشة المكالمة</button>
       <button class="btn danger" id="btnCancelCallRoom" style="margin-top:10px">☎ إنهاء المكالمة للجميع</button>
     </div>`;
   }
-  return `<h3 style="text-align:center">📞 مكالمة صوتية</h3><div class="call-sheet-icon">🎙️</div><button class="btn" id="btnCreateCallRoom">➕ إنشاء غرفة اتصال</button>`;
+  return `<h3 style="text-align:center">📞 مكالمة صوتية</h3><div class="call-sheet-icon">🎙️</div><button class="btn" id="btnCreateCallRoom">📞 اتصال الآن</button>`;
 }
 /* ---- شكل الشيت عند الطالبة ---- */
 function renderCallSheetStudent(call, ctx){
@@ -4219,10 +4214,8 @@ function bindCallSheetActions(){
     const ctx = state._callSheetCtx; if(!ctx) return;
     if(e.target.id==='btnCreateCallRoom'){
       e.target.disabled = true;
-      await createCallRoomFlow(ctx);
-    } else if(e.target.id==='btnSendCallInvite'){
-      e.target.disabled = true;
-      await sendCallInvite(ctx);
+      hideModal();
+      await startInstantCall(ctx);
     } else if(e.target.id==='btnJoinMyRoom' || e.target.id==='btnJoinInvitedCall'){
       hideModal();
       await joinCallRoom(ctx.callId);
@@ -4235,6 +4228,61 @@ function bindCallSheetActions(){
 }
 
 /* =====[ إنشاء الغرفة (المعلمة فقط) — Transaction لمنع أكتر من مكالمة نشطة لنفس المعلمة ولمنع Race Conditions ]===== */
+/* اتصال بضغطة واحدة: إنشاء الغرفة + إرسال الدعوة + فتح شاشة المكالمة فورًا — من غير أي خطوات وسيطة */
+async function startInstantCall(ctx){
+  const {callId, teacherId, studentId} = ctx;
+  try{
+    const lockRef = db.ref('activeTeacherCalls/'+teacherId);
+    const tx = await lockRef.transaction(cur=>{
+      if(cur && cur!==callId) return; // نسيبها زي ما هي لحد ما نتأكد تحت لو دي قفلة قديمة فعلاً
+      return callId;
+    });
+    if(!tx.committed){
+      const curVal = tx.snapshot.val();
+      if(curVal && curVal!==callId){
+        const oldCall = (await db.ref('calls/'+curVal).get()).val();
+        if(!oldCall || oldCall.status==='ended'){
+          await lockRef.set(callId); // قفل قديم لمكالمة خلصت/مش موجودة — يتحرر تلقائيًا بدل ما يفضل عالق
+        } else {
+          toast('في مكالمة تانية شغالة بالفعل'); return;
+        }
+      }
+    }
+    const callRef = db.ref('calls/'+callId);
+    const existing = (await callRef.get()).val();
+    if(!existing || existing.status==='ended'){
+      await callRef.set({
+        callId, teacherId, studentId, status:'invited', channel: shortChannelId(callId),
+        createdAt: firebase.database.ServerValue.TIMESTAMP, startedAt:null, endedAt:null
+      });
+    } else if(existing.status!=='active'){
+      await callRef.update({ status:'invited' });
+    }
+    const chatId = pairId(teacherId, studentId);
+    const channel = shortChannelId(callId);
+    await db.ref('chatThreads/'+chatId+'/messages').push({
+      senderUid: state.user.uid, type:'call_invite', callId, channel,
+      text:'مكالمة صوتية واردة.', ts: firebase.database.ServerValue.TIMESTAMP, read:false
+    });
+    bumpMessagesCounter();
+    pushMessageNotification(studentId, '📞 مكالمة واردة');
+    await joinCallRoom(callId); // المعلمة بتدخل فورًا (Offerer) وتستنى الطالبة كأي تطبيق مكالمات عادي
+    if(state._ringTimeout) clearTimeout(state._ringTimeout);
+    state._ringTimeout = setTimeout(async ()=>{
+      if(state.currentCallId!==callId) return;
+      try{
+        const c = (await db.ref('calls/'+callId).get()).val();
+        if(c && c.status!=='active'){
+          toast('لم يتم الرد على المكالمة');
+          await teacherEndOrCancelRoom(callId, teacherId);
+        }
+      }catch(e){ console.error(e); }
+    }, 45000);
+  }catch(e){
+    console.error(e);
+    toast('تعذر بدء المكالمة');
+  }
+}
 async function createCallRoomFlow(ctx){
   const {callId, teacherId, studentId} = ctx;
   const channel = shortChannelId(callId);
@@ -4308,9 +4356,12 @@ async function joinCallRoom(callId){
     const peerSnap = await db.ref('users/'+peerUid).get();
     const peerName = (peerSnap.val()||{}).name || 'مستخدم';
     await db.ref(`calls/${callId}/participants/${myUid}`).set(true);
-    if(call.status!=='active'){
+    // حالة المكالمة تتحول لـ "active" لما الطالبة (المُستقبِلة) تدخل بس — مش المعلمة (المتصلة)،
+    // عشان بانر "مكالمة واردة" يفضل شغال طول ما المعلمة مستنية والطالبة لسه ملبتش
+    if(myUid===call.studentId && call.status!=='active'){
       await db.ref('calls/'+callId).update({ status:'active', startedAt: call.startedAt || firebase.database.ServerValue.TIMESTAMP });
     }
+    if(state._ringTimeout){ clearTimeout(state._ringTimeout); state._ringTimeout=null; }
     openCallOverlay({uid:peerUid, name:peerName}, callId, call.channel);
     joinWebRTCCall(call.channel, callId);
   }catch(e){
@@ -4380,7 +4431,18 @@ async function showIncomingBanner(fromUid, callId){
     <button class="call-btn reject" style="width:44px;height:44px;font-size:16px" id="btnRejectIncoming">✕</button>`;
   banner.classList.add('active');
   $('#btnAcceptIncoming').onclick = ()=>{ banner.classList.remove('active'); joinCallRoom(callId); };
-  $('#btnRejectIncoming').onclick = ()=>{ banner.classList.remove('active'); };
+  $('#btnRejectIncoming').onclick = ()=>{ banner.classList.remove('active'); rejectIncomingCall(callId); };
+}
+async function rejectIncomingCall(callId){
+  try{
+    const snap = await db.ref('calls/'+callId).get();
+    const call = snap.val();
+    if(call && call.status!=='active' && call.status!=='ended'){
+      await db.ref('calls/'+callId).update({ status:'ended', endedAt: firebase.database.ServerValue.TIMESTAMP });
+      const lockSnap = await db.ref('activeTeacherCalls/'+call.teacherId).get();
+      if(lockSnap.val()===callId) await db.ref('activeTeacherCalls/'+call.teacherId).remove();
+    }
+  }catch(e){ console.error(e); }
 }
 function hideIncomingBanner(){ const b=$('#incomingBanner'); if(b) b.classList.remove('active'); }
 
@@ -4484,7 +4546,7 @@ async function joinWebRTCCall(channel, callId){
 /* ---------- إنشاء اتصال WebRTC وربطه بقناة الإشارة على Firebase ---------- */
 async function startPeerConnection(callId, isOfferer){
   const rtcRef = db.ref('calls/'+callId+'/rtc');
-  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceCandidatePoolSize: 5 });
   state.pc = pc;
 
   state.localStream.getTracks().forEach(track=> pc.addTrack(track, state.localStream));
@@ -4504,11 +4566,24 @@ async function startPeerConnection(callId, isOfferer){
     if(event.candidate) rtcRef.child(myCandField).push(event.candidate.toJSON());
   };
 
+  // مرشحات ICE اللي توصل قبل ما نضبط الـ remoteDescription لازم تتأجل مؤقتًا (Queue) بدل ما تتفقد نهائيًا،
+  // لأن pc.addIceCandidate بيرفض أي مرشح جاي قبل ضبط الوصف البعيد — وده كان بيخلي المكالمة "تشتغل مرة ومرة لأ"
+  let remoteDescSet = false;
+  let pendingRemoteCandidates = [];
+  function flushPendingCandidates(){
+    remoteDescSet = true;
+    pendingRemoteCandidates.forEach(c=> pc.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
+    pendingRemoteCandidates = [];
+  }
+
   // مؤشر حالة الاتصال + إعادة الاتصال التلقائية عند انقطاع الشبكة (بديل reconnect بتاع Agora)
+  let disconnectTimer = null;
+  state._rtcDisconnectTimer = null;
   pc.oniceconnectionstatechange = ()=>{
     const cs = pc.iceConnectionState;
     const statusEl = $('#callStatusText');
     if(cs==='connected' || cs==='completed'){
+      if(disconnectTimer){ clearTimeout(disconnectTimer); disconnectTimer=null; state._rtcDisconnectTimer=null; }
       setCallConnDot('good');
       if(statusEl) statusEl.style.display='none';
       const tm=$('#callTimerText'); if(tm) tm.style.display='block';
@@ -4517,14 +4592,30 @@ async function startPeerConnection(callId, isOfferer){
         state.callTimerInt = setInterval(()=>{ state.callSeconds++; const el=$('#callTimerText'); if(el) el.textContent=fmtDuration(state.callSeconds); }, 1000);
       }
       state._rtcRetryCount = 0;
-    } else if(cs==='checking' || cs==='disconnected'){
+      if(state._ringTimeout){ clearTimeout(state._ringTimeout); state._ringTimeout=null; }
+    } else if(cs==='checking'){
+      setCallConnDot('reconnecting');
+      if(statusEl){ statusEl.style.display='block'; statusEl.textContent='جارِ الاتصال...'; }
+    } else if(cs==='disconnected'){
+      // "disconnected" ممكن يبقى مؤقت جدًا (تقلب شبكة عادي) أو يفضل عالق كده على بعض المتصفحات من غير
+      // ما يتحول لـ "failed" أبدًا — فبنستنى شوية، ولو لسه disconnected بعدها نعمل ICE Restart بنفسنا
       setCallConnDot('reconnecting');
       if(statusEl){ statusEl.style.display='block'; statusEl.textContent='جارِ إعادة الاتصال...'; }
+      if(disconnectTimer) clearTimeout(disconnectTimer);
+      disconnectTimer = setTimeout(()=>{
+        if(pc.iceConnectionState==='disconnected' && isOfferer){
+          state._rtcRetryCount++;
+          restartIce(callId, pc);
+        }
+      }, 6000);
+      state._rtcDisconnectTimer = disconnectTimer;
     } else if(cs==='failed'){
+      if(disconnectTimer){ clearTimeout(disconnectTimer); disconnectTimer=null; state._rtcDisconnectTimer=null; }
       setCallConnDot('bad');
-      if(isOfferer && state._rtcRetryCount < 5){
+      if(isOfferer){
         state._rtcRetryCount++;
-        restartIce(callId, pc);
+        const delay = Math.min(1000 * state._rtcRetryCount, 8000); // Backoff تدريجي بدل ما نطرق فايربيز على طول
+        setTimeout(()=> restartIce(callId, pc), delay);
       } else if(statusEl){
         statusEl.style.display='block';
         statusEl.innerHTML = `تعذر إعادة الاتصال <button class="call-retry-btn" id="btnRetryJoin">إعادة المحاولة</button>`;
@@ -4537,16 +4628,20 @@ async function startPeerConnection(callId, isOfferer){
   const peerCandRef = rtcRef.child(peerCandField);
   const candCb = snap=>{
     const cand = snap.val();
-    if(cand){ pc.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{}); }
+    if(!cand) return;
+    if(remoteDescSet) pc.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{});
+    else pendingRemoteCandidates.push(cand);
   };
   peerCandRef.on('child_added', candCb);
   if(isOfferer) state._rtcAnswerCandRef = {ref:peerCandRef, cb:candCb};
   else state._rtcOfferCandRef = {ref:peerCandRef, cb:candCb};
 
   if(isOfferer){
-    // المعلمة: تمسح أي Offer/Answer قديم من جلسة سابقة، وتبعت Offer جديد
-    await rtcRef.child('offer').remove();
-    await rtcRef.child('answer').remove();
+    // المعلمة: تمسح كل بيانات الإشارة القديمة (Offer/Answer/كل المرشحات) من أي جلسة سابقة لنفس الزوج قبل
+    // ما تبدأ من جديد — مسح offer/answer بس مش كافي، لأن باقي المرشحات القديمة كانت بتفضل متراكمة في
+    // فايربيز وترجع تتقرا تاني (child_added بيرجع كل الداتا القديمة) في كل مكالمة جديدة، وده سبب رئيسي
+    // لتذبذب المكالمات ("مرة تظبط ومرة لأ")
+    await rtcRef.remove();
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     await rtcRef.child('offer').set({ sdp: offer.sdp, type: offer.type });
@@ -4555,7 +4650,7 @@ async function startPeerConnection(callId, isOfferer){
     const answerCb = snap=>{
       const ans = snap.val();
       if(ans && pc.signalingState==='have-local-offer'){
-        pc.setRemoteDescription(new RTCSessionDescription(ans)).catch(e=>console.error(e));
+        pc.setRemoteDescription(new RTCSessionDescription(ans)).then(flushPendingCandidates).catch(e=>console.error(e));
       }
     };
     answerRef.on('value', answerCb);
@@ -4567,7 +4662,9 @@ async function startPeerConnection(callId, isOfferer){
       const off = snap.val();
       if(!off || pc.signalingState==='closed') return;
       try{
+        remoteDescSet = false; // Offer جديد (مثلاً بعد ICE Restart) يعني لازم ننتظر تثبيته قبل قبول مرشحات جديدة
         await pc.setRemoteDescription(new RTCSessionDescription(off));
+        flushPendingCandidates();
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await rtcRef.child('answer').set({ sdp: answer.sdp, type: answer.type });
@@ -4580,7 +4677,7 @@ async function startPeerConnection(callId, isOfferer){
 /* ---------- محاولة إعادة اتصال (ICE Restart) من جانب المعلمة (Offerer) عند فشل الاتصال ---------- */
 async function restartIce(callId, pc){
   try{
-    if(pc.signalingState==='closed') return;
+    if(pc.signalingState==='closed' || state.pc!==pc) return;
     const rtcRef = db.ref('calls/'+callId+'/rtc');
     const offer = await pc.createOffer({ iceRestart:true });
     await pc.setLocalDescription(offer);
@@ -4611,6 +4708,7 @@ function startSoundwaveMonitor(stream){
 }
 /* ---------- إزالة كل مستمعي/موارد WebRTC بالكامل ومنع تسريب الذاكرة ---------- */
 async function teardownWebRTC(){
+  if(state._rtcDisconnectTimer){ clearTimeout(state._rtcDisconnectTimer); state._rtcDisconnectTimer=null; }
   if(state._rtcAnalyserRaf){ cancelAnimationFrame(state._rtcAnalyserRaf); state._rtcAnalyserRaf=null; }
   if(state._rtcAnalyserCtx){ try{ state._rtcAnalyserCtx.close(); }catch(_){} state._rtcAnalyserCtx=null; }
   if(state._rtcOfferRef){ state._rtcOfferRef.ref.off('value', state._rtcOfferRef.cb); state._rtcOfferRef=null; }
@@ -4624,6 +4722,7 @@ async function teardownWebRTC(){
 }
 async function endCallUI(callId){
   hideIncomingBanner();
+  if(state._ringTimeout){ clearTimeout(state._ringTimeout); state._ringTimeout=null; }
   $('#callOverlay').classList.remove('active');
   clearInterval(state.callTimerInt); state.callTimerInt=null;
   setSoundwaveActive(false);
