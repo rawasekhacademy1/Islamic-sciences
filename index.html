@@ -1003,7 +1003,10 @@ function render(){
   if(state.route==='banned'){ app.innerHTML = screenBanned(); bindBannedEvents(); return; }
   if(state.route==='expired'){ app.innerHTML = screenExpired(); bindExpiredEvents(); return; }
 
-  if(state.chatWith){ app.innerHTML = screenChat(); bindChatEvents(); return; }
+  if(state.chatWith){
+    if(!document.querySelector('.chat-screen')){ app.innerHTML = screenChat(); bindChatEvents(); }
+    return;
+  }
 
   if(state.profile && state.profile.role==='admin'){ app.innerHTML = screenAdminShell(); bindAdminEvents(); return; }
   if(state.profile && state.profile.role==='teacher'){ app.innerHTML = screenTeacherShell(); bindTeacherEvents(); return; }
@@ -3388,7 +3391,9 @@ function bindChatEvents(){
     }
     state.chatLastRenderedLastId = lastEntry ? lastEntry[0] : null;
 
-    entries.forEach(([id,m])=>{ if(m.senderUid!==myUid && !m.read && !m.deleted){ db.ref(`chatThreads/${chatId}/messages/${id}/read`).set(true); } });
+    const unreadUpdates = {};
+    entries.forEach(([id,m])=>{ if(m.senderUid!==myUid && !m.read && !m.deleted){ unreadUpdates[`${id}/read`] = true; } });
+    if(Object.keys(unreadUpdates).length){ db.ref(`chatThreads/${chatId}/messages`).update(unreadUpdates); }
     $all('.chat-img', body).forEach(img=> img.addEventListener('click', ()=> openImgViewer(img.dataset.full||img.src)));
     $all('.bubble[data-msg-id]', body).forEach(el=>{
       el.addEventListener('dblclick', ()=> setReplyTo(el.dataset.msgId, msgs[el.dataset.msgId]));
@@ -3503,17 +3508,20 @@ async function sendChatMessage(){
   const input = $('#chatInput'); const text = input.value.trim();
   if(!text) return;
   const o = state.chatWith; const chatId = pairId(state.user.uid, o.uid);
-  input.value='';
   const payload = { senderUid: state.user.uid, type:'text', text, ts: firebase.database.ServerValue.TIMESTAMP, read:false };
   if(state.replyTo){ payload.replyTo = { msgId: state.replyTo.msgId, preview: state.replyTo.preview, senderUid: state.replyTo.senderUid }; }
   try{
     await db.ref('chatThreads/'+chatId+'/messages').push(payload);
+    input.value='';
     bumpMessagesCounter();
     pushMessageNotification(o.uid, text);
     setReplyTo(null);
     if(state.myTypingRef) state.myTypingRef.remove();
     if(state.typingTimeout){ clearTimeout(state.typingTimeout); state.typingTimeout=null; }
-  }catch(e){ toast('تعذر إرسال الرسالة'); }
+  }catch(e){
+    if(!input.value.trim()) input.value = text;
+    toast('تعذر إرسال الرسالة');
+  }
 }
 
 function bindMessageLongPress(chatId){
