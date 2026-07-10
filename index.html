@@ -611,7 +611,7 @@ let state = {
   pc:null, localStream:null, currentCallId:null, callTimerInt:null, callSeconds:0,
   _callSheetWatcher:null, _callSheetCtx:null, _callListeners:[], _callPeerMutedWatcher:null,
   _rtcOfferRef:null, _rtcAnswerRef:null, _rtcOfferCandRef:null, _rtcAnswerCandRef:null,
-  _rtcRole:null, _rtcRetryCount:0, _rtcAnalyserCtx:null, _rtcAnalyserRaf:null, _rtcDisconnectTimer:null, _ringTimeout:null,
+  _rtcRole:null, _rtcRetryCount:0, _rtcAnalyserCtx:null, _rtcAnalyserRaf:null, _rtcDisconnectTimer:null, _ringTimeout:null, _wakeLock:null, _callDisconnectRef:null, _lockDisconnectRef:null,
   studentsCache:{}, teachersCache:{}, route:'loading', routeParams:{},
   maintenance:{enabled:false, message:''} // حالة وضع الصيانة — بتتحدث لحظيًا من siteConfig/maintenance حتى قبل تسجيل الدخول
 };
@@ -2962,7 +2962,7 @@ async function loadTeacherStudentProfile(){
     if(el) el.textContent = sessions.length ? sessions.map(s=>`${WEEKDAY_NAMES_AR[s.day]} — ${s.time}`).join(' · ') : 'لسه معملتش أي ميعاد ثابت للطالب ده';
   });
   $('#btnOpenChat')?.addEventListener('click', ()=>openChat(sid, teacherActiveStudent.name));
-  $('#btnStartCall')?.addEventListener('click', ()=>openCallSheet(sid, teacherActiveStudent.name));
+  $('#btnStartCall')?.addEventListener('click', ()=>callDirect(sid, teacherActiveStudent.name));
   $('#btnEditProgress')?.addEventListener('click', openProgressModal);
   $('#btnAddLog')?.addEventListener('click', openDailyLogModal);
   $('#btnEditSchedule')?.addEventListener('click', ()=>openScheduleModal(sid, teacherActiveStudent.name));
@@ -3481,7 +3481,7 @@ function bindChatEvents(){
   state.chatLastRenderedLastId = null;
   state.pendingAttachments = [];
   $('#btnCloseChat').addEventListener('click', ()=>closeChat());
-  $('#btnCallFromChat').addEventListener('click', ()=>openCallSheet(o.uid, o.name));
+  $('#btnCallFromChat').addEventListener('click', ()=>callDirect(o.uid, o.name));
   $('#btnSendMsg').addEventListener('click', sendChatMessage);
   $('#chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChatMessage(); } });
   $('#btnAttachFile').addEventListener('click', ()=> $('#chatFileInput').click());
@@ -4131,6 +4131,14 @@ function teardownCallSheetWatcher(){
   }
   state._callSheetCtx = null;
 }
+/* ضغطة الاتصال بتاخد المعلمة على طول جوه المكالمة — من غير أي شيت أو حوار وسيط */
+function callDirect(otherUid, otherName){
+  if(state.profile.role!=='teacher'){ toast('المكالمة بتبدأ من عند المعلمة'); return; }
+  if(state.currentCallId){ toast('انت بالفعل في مكالمة، أنهِها الأول'); return; }
+  const myUid = state.user.uid;
+  const callId = pairId(myUid, otherUid);
+  startInstantCall({ callId, teacherId: myUid, studentId: otherUid, otherName });
+}
 function openCallSheet(otherUid, otherName){
   // منع فتح الشيت وانت أصلاً جوه مكالمة شغالة فعليًا
   if(state.currentCallId){ toast('انت بالفعل في مكالمة، أنهِها الأول'); return; }
@@ -4258,15 +4266,19 @@ async function startInstantCall(ctx){
     } else if(existing.status!=='active'){
       await callRef.update({ status:'invited' });
     }
-    const chatId = pairId(teacherId, studentId);
-    const channel = shortChannelId(callId);
-    await db.ref('chatThreads/'+chatId+'/messages').push({
-      senderUid: state.user.uid, type:'call_invite', callId, channel,
-      text:'مكالمة صوتية واردة.', ts: firebase.database.ServerValue.TIMESTAMP, read:false
-    });
-    bumpMessagesCounter();
-    pushMessageNotification(studentId, '📞 مكالمة واردة');
-    await joinCallRoom(callId); // المعلمة بتدخل فورًا (Offerer) وتستنى الطالبة كأي تطبيق مكالمات عادي
+    joinCallRoom(callId); // المعلمة بتدخل فورًا (Offerer) — من غير ما تستنى إرسال الدعوة، عشان شاشة المكالمة تفتح أسرع
+    (async()=>{ // إرسال دعوة الشات + الإشعار في الخلفية، مش لازم نستناهم عشان ندخل المكالمة
+      try{
+        const chatId = pairId(teacherId, studentId);
+        const channel = shortChannelId(callId);
+        await db.ref('chatThreads/'+chatId+'/messages').push({
+          senderUid: state.user.uid, type:'call_invite', callId, channel,
+          text:'مكالمة صوتية واردة.', ts: firebase.database.ServerValue.TIMESTAMP, read:false
+        });
+        bumpMessagesCounter();
+        pushMessageNotification(studentId, '📞 مكالمة واردة');
+      }catch(e){ console.error(e); }
+    })();
     if(state._ringTimeout) clearTimeout(state._ringTimeout);
     state._ringTimeout = setTimeout(async ()=>{
       if(state.currentCallId!==callId) return;
@@ -4362,6 +4374,17 @@ async function joinCallRoom(callId){
       await db.ref('calls/'+callId).update({ status:'active', startedAt: call.startedAt || firebase.database.ServerValue.TIMESTAMP });
     }
     if(state._ringTimeout){ clearTimeout(state._ringTimeout); state._ringTimeout=null; }
+    // شبكة الأمان: لو الطرف التاني قفل التطبيق فجأة/قطعت عنه النت خالص (مش مجرد تقطيع WebRTC عادي)،
+    // فايربيز نفسه هيسجل المكالمة "منتهية" تلقائيًا حتى لو جهازه مطفي أو التطبيق اتقفل بالقوة —
+    // من غير كده كنا بنفضل "معلقين" نحاول نتصل بحد مش موجود أصلاً، والقفل بتاع المعلمة كان بيفضل عالق للأبد
+    const callDisconnectRef = db.ref('calls/'+callId);
+    callDisconnectRef.onDisconnect().update({ status:'ended', endedAt: firebase.database.ServerValue.TIMESTAMP });
+    state._callDisconnectRef = callDisconnectRef;
+    if(myUid===call.teacherId){
+      const lockDisconnectRef = db.ref('activeTeacherCalls/'+call.teacherId);
+      lockDisconnectRef.onDisconnect().remove();
+      state._lockDisconnectRef = lockDisconnectRef;
+    }
     openCallOverlay({uid:peerUid, name:peerName}, callId, call.channel);
     joinWebRTCCall(call.channel, callId);
   }catch(e){
@@ -4447,8 +4470,32 @@ async function rejectIncomingCall(callId){
 function hideIncomingBanner(){ const b=$('#incomingBanner'); if(b) b.classList.remove('active'); }
 
 /* =====[ شاشة المكالمة الكاملة (تصميم أصلي جديد بهوية المنصة) ]===== */
+/* ---------- منع قفل الشاشة أثناء المكالمة — أكتر سبب شائع لـ "المكالمة بتفصل لوحدها" على الموبايل
+   هو إن الشاشة بتقفل أو المتصفح بيوقف تبويب النت في الخلفية، فيقطع كل حاجة (الميكروفون + الاتصال) ---------- */
+async function requestCallWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      state._wakeLock = await navigator.wakeLock.request('screen');
+      state._wakeLock.addEventListener('release', ()=>{ state._wakeLock = null; });
+    }
+  }catch(_){ /* بعض المتصفحات (خصوصًا آيفون القديم) مش بتدعمها — المكالمة نفسها بتفضل شغالة عادي */ }
+}
+async function releaseCallWakeLock(){
+  try{ if(state._wakeLock){ await state._wakeLock.release(); state._wakeLock=null; } }catch(_){}
+}
+document.addEventListener('visibilitychange', ()=>{
+  // لو المستخدم رجع للتبويب أثناء مكالمة شغالة، نعيد طلب الـ wake lock (المتصفح بيلغيه تلقائيًا لما التبويب يختفي)
+  if(document.visibilityState==='visible' && state.currentCallId) requestCallWakeLock();
+});
+function callBeforeUnloadHandler(e){
+  e.preventDefault();
+  e.returnValue = '';
+  return '';
+}
 function openCallOverlay(peer, callId, channel){
   state.currentCallId = callId;
+  requestCallWakeLock();
+  window.addEventListener('beforeunload', callBeforeUnloadHandler);
   const overlay = $('#callOverlay');
   overlay.innerHTML = `
     <div></div>
@@ -4461,6 +4508,7 @@ function openCallOverlay(peer, callId, channel){
       <div class="call-status"><span class="call-conn-dot" id="callConnDot"></span><span id="callStatusText">جارِ الاتصال...</span></div>
       <div class="call-timer" id="callTimerText" style="display:none">00:00</div>
       <div class="call-peer-muted" id="callPeerMutedText" style="display:none">🔇 الطرف الآخر عامل كتم للميكروفون</div>
+      <div style="font-size:11.5px;opacity:.65;margin-top:8px">⚠️ متقفليش الشاشة ولا تسيبي الصفحة أثناء المكالمة عشان متتقطعش</div>
     </div>
     <div class="call-actions">
       <button class="call-btn mute" id="btnMuteCall">🎤</button>
@@ -4641,7 +4689,12 @@ async function startPeerConnection(callId, isOfferer){
     // ما تبدأ من جديد — مسح offer/answer بس مش كافي، لأن باقي المرشحات القديمة كانت بتفضل متراكمة في
     // فايربيز وترجع تتقرا تاني (child_added بيرجع كل الداتا القديمة) في كل مكالمة جديدة، وده سبب رئيسي
     // لتذبذب المكالمات ("مرة تظبط ومرة لأ")
-    await rtcRef.remove();
+    await Promise.all([
+      rtcRef.child('offer').remove(),
+      rtcRef.child('answer').remove(),
+      rtcRef.child('offererCandidates').remove(),
+      rtcRef.child('answererCandidates').remove()
+    ]);
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     await rtcRef.child('offer').set({ sdp: offer.sdp, type: offer.type });
@@ -4722,7 +4775,11 @@ async function teardownWebRTC(){
 }
 async function endCallUI(callId){
   hideIncomingBanner();
+  releaseCallWakeLock();
+  window.removeEventListener('beforeunload', callBeforeUnloadHandler);
   if(state._ringTimeout){ clearTimeout(state._ringTimeout); state._ringTimeout=null; }
+  if(state._callDisconnectRef){ try{ await state._callDisconnectRef.onDisconnect().cancel(); }catch(_){} state._callDisconnectRef=null; }
+  if(state._lockDisconnectRef){ try{ await state._lockDisconnectRef.onDisconnect().cancel(); }catch(_){} state._lockDisconnectRef=null; }
   $('#callOverlay').classList.remove('active');
   clearInterval(state.callTimerInt); state.callTimerInt=null;
   setSoundwaveActive(false);
